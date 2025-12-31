@@ -1,0 +1,13 @@
+{
+  "run_id": "6d31a935edb44cfb996b24ad11a5d669",
+  "model_name": "CreditScoring_BestModel",
+  "model_version": "1",
+  "algorithm": "LightGBM",
+  "auc": null,
+  "business_cost": 0.53545,
+  "optimal_threshold": 0.45,
+  "training_date": 1767021256490,
+  "export_date": "2025-12-31T14:45:04.135124",
+  "mlflow_model_uri": "models:/CreditScoring_BestModel/Production",
+  "n_features": 125
+}

@@ -57,11 +57,14 @@ def compare_with_production(model_name, X_test, y_test, challenger_model, challe
         print(f"Challenger Cost: {chall_cost:.4f} (Threshold: {challenger_threshold:.2f})")
         print(f"Business Improvement: {improvement:.2f}%")
         
-        if chall_cost < champ_cost:
-            print("🚀 Challenger is BETTER. Proceeding with registration.")
+        if chall_cost <= champ_cost:
+            if chall_cost == champ_cost:
+                print("🔄 Challenger has EQUAL performance. Proceeding with registration (newer model).")
+            else:
+                print("🚀 Challenger is BETTER. Proceeding with registration.")
             return True
         else:
-            print("⚠️ Challenger is NOT better. Review model before registration.")
+            print("⚠️ Challenger is WORSE. Review model before registration.")
             return False
             
     except Exception as e:

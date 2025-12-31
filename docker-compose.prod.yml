@@ -1,8 +1,7 @@
+# Production-only Docker Compose for Lightsail deployment
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
 services:
-  # =============================================================================
-  # PRODUCTION SERVICES (for Lightsail deployment)
-  # =============================================================================
-  
   postgres:
     image: postgres:15-alpine
     container_name: mission7_postgres
@@ -15,14 +14,13 @@ services:
     ports:
       - "5470:5432"
     networks:
-      - mission7_net
+      - mission7_prod_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mission7 -d credit_scoring"]
       interval: 10s
       timeout: 5s
       retries: 5
-    profiles:
-      - prod
+    restart: unless-stopped
 
   mlflow-prod:
     build: .
@@ -34,9 +32,8 @@ services:
       - ./mlruns:/app/mlruns
       - ./prod_models:/app/prod_models
     networks:
-      - mission7_net
-    profiles:
-      - prod
+      - mission7_prod_net
+    restart: unless-stopped
 
   api:
     build: .
@@ -53,12 +50,15 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow-prod:5002
       - DB_URI=postgresql://${POSTGRES_USER:-mission7}:${POSTGRES_PASSWORD:-mission7pass}@postgres:5432/${POSTGRES_DB:-credit_scoring}
       - PROD_MODEL_PATH=/app/prod_models/model.pkl
-      - USE_POSTGRES=${USE_POSTGRES:-false}
-      - DB_PATH=/app/dataset/home_credit.db
+      - USE_POSTGRES=true
     depends_on:
-      - mlflow-dev
+      postgres:
+        condition: service_healthy
+      mlflow-prod:
+        condition: service_started
     networks:
-      - mission7_net
+      - mission7_prod_net
+    restart: unless-stopped
 
   nginx:
     image: nginx:alpine
@@ -70,51 +70,13 @@ services:
       - ./src/api/templates:/usr/share/nginx/html:ro
     depends_on:
       - api
+      - mlflow-prod
     networks:
-      - mission7_net
-    profiles:
-      - prod
-
-  # =============================================================================
-  # DEVELOPMENT SERVICES (default, for local notebook work)
-  # =============================================================================
-
-  jupyter:
-    build: .
-    container_name: mission7_jupyter
-    ports:
-      - "8870:8888"
-    volumes:
-      - .:/app
-      - ./mlruns:/app/mlruns
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow-dev:5005
-      - DB_PATH=/app/dataset/home_credit.db
-    depends_on:
-      - mlflow-dev
-    networks:
-      - mission7_net
-
-  mlflow-dev:
-    build: .
-    container_name: mission7_mlflow_dev
-    command: >
-      mlflow server 
-      --host 0.0.0.0 
-      --port 5005 
-      --backend-store-uri /app/mlruns 
-      --default-artifact-root /app/mlruns 
-      --serve-artifacts
-      --allowed-hosts "*"
-    ports:
-      - "5075:5005"
-    volumes:
-      - ./mlruns:/app/mlruns
-    networks:
-      - mission7_net
+      - mission7_prod_net
+    restart: unless-stopped
 
 networks:
-  mission7_net:
+  mission7_prod_net:
     driver: bridge
 
 volumes:
