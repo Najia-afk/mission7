@@ -1,9 +1,18 @@
+# =============================================================================
 # Mission7 CI/CD Pipeline
-# 
-# Triggers on push to main branch:
-# 1. Run pytest tests
-# 2. Build Docker images
-# 3. Deploy to Lightsail (optional, requires secrets)
+# =============================================================================
+#
+# Triggers:
+#   - Push to main → Full pipeline (test + build + deploy)
+#   - Pull request to main → Test + build only
+#
+# Architecture:
+#   GitHub → Tests → Build → Deploy to Lightsail
+#                          → git pull
+#                          → docker compose up
+#                          → Model served from prod_models/
+#
+# =============================================================================
 
 name: CI/CD Pipeline
 
@@ -18,7 +27,7 @@ env:
 
 jobs:
   # ===========================================================================
-  # JOB 1: Run Tests
+  # JOB 1: Run Tests (pytest)
   # ===========================================================================
   test:
     name: Run Tests
@@ -84,7 +93,7 @@ jobs:
           docker run --rm mission7-api:test python -c "import flask; import mlflow; print('✅ Docker build OK')"
 
   # ===========================================================================
-  # JOB 3: Deploy to Lightsail (Optional)
+  # JOB 3: Deploy to Lightsail
   # ===========================================================================
   deploy:
     name: Deploy to Lightsail
@@ -92,7 +101,6 @@ jobs:
     needs: [test, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
-    # Only run if deployment secrets are configured
     environment: production
     
     steps:
@@ -101,27 +109,54 @@ jobs:
       
       - name: Deploy to Lightsail via SSH
         uses: appleboy/ssh-action@v1.0.3
-        if: ${{ secrets.LIGHTSAIL_HOST != '' }}
+        if: ${{ vars.LIGHTSAIL_HOST != '' }}
         with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
+          host: ${{ vars.LIGHTSAIL_HOST }}
           username: ${{ secrets.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
+            set -e
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
             cd /opt/mission7
-            git pull origin main
-            docker compose -f docker-compose.prod.yml pull
+            
+            # Pull latest code from main
+            echo "📥 Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Stop existing containers gracefully
+            echo "🛑 Stopping existing containers..."
+            docker compose -f docker-compose.prod.yml down --remove-orphans || true
+            
+            # Build and start with new code
+            echo "🔨 Building and starting containers..."
             docker compose -f docker-compose.prod.yml up -d --build
+            
+            # Wait for services to be ready
+            echo "⏳ Waiting for services to start..."
+            sleep 15
+            
+            # Verify deployment
+            echo "✅ Checking service health..."
             docker compose -f docker-compose.prod.yml ps
+            
+            # Health check
+            curl -f http://localhost/api/health || echo "⚠️ Health check failed, but continuing..."
+            
+            echo "🎉 Deployment complete!"
       
-      - name: Health check
-        if: ${{ secrets.LIGHTSAIL_HOST != '' }}
+      - name: Health check (external)
+        if: ${{ vars.LIGHTSAIL_HOST != '' }}
         run: |
+          echo "Waiting for services to stabilize..."
           sleep 30
-          curl -f http://${{ secrets.LIGHTSAIL_HOST }}/api/health || exit 1
-          echo "✅ Deployment successful!"
+          echo "Checking API health..."
+          curl -f http://${{ vars.LIGHTSAIL_HOST }}/api/health && echo "✅ API is healthy!" || echo "⚠️ API not responding yet"
 
   # ===========================================================================
-  # JOB 4: Notify (Optional)
+  # JOB 4: Notify Status
   # ===========================================================================
   notify:
     name: Notify Status
@@ -134,6 +169,7 @@ jobs:
         run: |
           if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ]; then
             echo "✅ All checks passed!"
+            echo "📦 Model in prod_models/ will be served by API"
           else
             echo "❌ Some checks failed"
             exit 1

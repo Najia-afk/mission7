@@ -1,18 +1,41 @@
-# Production-only Docker Compose for Lightsail deployment
-# Usage: docker-compose -f docker-compose.prod.yml up -d
+# =============================================================================
+# Mission7 Production Stack - 3-Tier Architecture with PostgreSQL
+# =============================================================================
+#
+# Architecture:
+#   Nginx (80) → API (8000) → PostgreSQL (5432)
+#                          → Model from prod_models/
+#                          → MLflow Registry (5002)
+#
+# CI/CD Flow:
+#   1. Push to main → GitHub Actions triggers
+#   2. Tests run (pytest)
+#   3. Lightsail: git pull origin main
+#   4. docker compose -f docker-compose.prod.yml up -d --build
+#   5. API loads model from prod_models/
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# =============================================================================
 
 services:
+  # ==========================================================================
+  # PostgreSQL - Client Database (Port 5432, internal)
+  # Stores client data for lookup queries
+  # ==========================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: mission7_postgres
+    container_name: mission7_postgres_prod
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-mission7}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mission7pass}
       POSTGRES_DB: ${POSTGRES_DB:-credit_scoring}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5470:5432"
+    expose:
+      - "5432"
     networks:
       - mission7_prod_net
     healthcheck:
@@ -20,60 +43,88 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
-  mlflow-prod:
-    build: .
-    container_name: mission7_mlflow_prod
-    command: mlflow server --host 0.0.0.0 --port 5002 --backend-store-uri /app/mlruns --default-artifact-root /app/mlruns --serve-artifacts
-    ports:
-      - "5072:5002"
-    volumes:
-      - ./mlruns:/app/mlruns
-      - ./prod_models:/app/prod_models
-    networks:
-      - mission7_prod_net
-    restart: unless-stopped
-
-  api:
-    build: .
-    container_name: mission7_api
-    command: gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 src.api.app:app
-    ports:
-      - "8070:8000"
-    volumes:
-      - .:/app
-      - ./mlruns:/app/mlruns
-      - ./prod_models:/app/prod_models
-      - ./dataset:/app/dataset
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow-prod:5002
-      - DB_URI=postgresql://${POSTGRES_USER:-mission7}:${POSTGRES_PASSWORD:-mission7pass}@postgres:5432/${POSTGRES_DB:-credit_scoring}
-      - PROD_MODEL_PATH=/app/prod_models/model.pkl
-      - USE_POSTGRES=true
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mlflow-prod:
-        condition: service_started
-    networks:
-      - mission7_prod_net
-    restart: unless-stopped
-
+  # ==========================================================================
+  # NGINX - Reverse Proxy & Dashboard (Port 80)
+  # Serves the dashboard HTML and proxies API/MLflow requests
+  # ==========================================================================
   nginx:
     image: nginx:alpine
-    container_name: mission7_nginx
+    container_name: mission7_nginx_prod
+    restart: unless-stopped
     ports:
-      - "8071:80"
+      - "80:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./src/api/templates:/usr/share/nginx/html:ro
     depends_on:
       - api
-      - mlflow-prod
     networks:
       - mission7_prod_net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # API - Flask Prediction Service (Port 8000, internal)
+  # Loads model from prod_models/ and queries PostgreSQL for client data
+  # ==========================================================================
+  api:
+    build: .
+    container_name: mission7_api_prod
     restart: unless-stopped
+    command: gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 src.api.app:app
+    expose:
+      - "8000"
+    volumes:
+      - ./prod_models:/app/prod_models:ro
+      - ./dataset:/app/dataset:ro
+      - ./src:/app/src:ro
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5002
+      - PROD_MODEL_PATH=/app/prod_models/model.pkl
+      - USE_POSTGRES=true
+      - DB_URI=postgresql://${POSTGRES_USER:-mission7}:${POSTGRES_PASSWORD:-mission7pass}@postgres:5432/${POSTGRES_DB:-credit_scoring}
+      - DB_PATH=/app/dataset/home_credit.db
+      - FLASK_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    networks:
+      - mission7_prod_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # MLFLOW - Model Registry (Port 5002, internal)
+  # Tracks experiments and model versions
+  # ==========================================================================
+  mlflow:
+    build: .
+    container_name: mission7_mlflow_prod
+    restart: unless-stopped
+    command: >
+      mlflow server 
+      --host 0.0.0.0 
+      --port 5002 
+      --backend-store-uri /app/mlruns 
+      --default-artifact-root /app/mlruns 
+      --serve-artifacts
+      --allowed-hosts "*"
+    expose:
+      - "5002"
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./prod_models:/app/prod_models:ro
+    networks:
+      - mission7_prod_net
 
 networks:
   mission7_prod_net:
