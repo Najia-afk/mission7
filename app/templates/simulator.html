@@ -6,7 +6,11 @@
     <title>Credit Scoring - Prêt à dépenser | Simulator</title>
     <meta name="description" content="Simplified credit scoring simulator for end-users">
     
-    <!-- Modular CSS Architecture -->
+    <!-- Bootstrap CSS (Restored for original design) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Modular CSS Architecture (Kept for layout structure) -->
     <link rel="stylesheet" href="/static/styles/variables.css">
     <link rel="stylesheet" href="/static/styles/base.css">
     <link rel="stylesheet" href="/static/styles/layout.css">
@@ -15,7 +19,29 @@
     <link rel="stylesheet" href="/static/styles/components.css">
     <link rel="stylesheet" href="/static/styles/responsive.css">
     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <style>
+        /* Overrides to blend Bootstrap with custom CSS */
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .form-label.small.fw-bold {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+        .btn-info {
+            color: white !important;
+        }
+        /* Ensure Bootstrap tooltips work */
+        .tooltip {
+            z-index: 10000;
+        }
+    </style>
 </head>
 <body>
     <a href="#main-content" class="skip-link">Aller au contenu principal</a>
@@ -58,66 +84,56 @@
         <!-- Main Content -->
         <main id="main-content" class="main-content">
             <div class="container">
-                <!-- Compact Single Card Form -->
-                <div class="card simulator-card">
-                    <div class="card-header">
-                        <h1 class="card-title" style="font-size: 1.5rem; margin: 0;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                            </svg>
-                            Credit Eligibility Simulator
-                        </h1>
-                        <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">
-                            Fill in your information below to get an instant credit eligibility estimate
-                        </p>
-                    </div>
-                    
-                    <div class="card-body">
-                        <form id="simulatorForm">
-                            <div class="simulator-columns">
-                                <!-- Left Column: Personal & Financial -->
-                                <div class="simulator-column">
-                                    <h4 class="form-section-title">👤 Personal & Financial</h4>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label class="form-label">Age (Years)</label>
-                                            <input type="number" name="AGE_YEARS" class="form-control form-control-sm" value="35" required>
+                <div class="card p-4 simulator-card">
+                    <h2 class="text-center mb-3">End-user Simulator</h2>
+                    <p class="text-muted text-center mb-4">Simplified form grouped by thematic for quick testing.</p>
+
+                    <form id="simulatorForm">
+                        <div class="row g-4">
+                            <!-- Left Column: Personal & Financial -->
+                            <div class="col-md-6">
+                                <div class="card h-100 p-3 border">
+                                    <h4 class="mb-3 border-bottom pb-2">👤 Personal & Financial</h4>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Age (Years) <i class="bi bi-question-circle text-muted" title="Client's age in years."></i></label>
+                                            <input type="number" step="any" class="form-control" name="AGE_YEARS" value="35">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Gender</label>
-                                            <select name="CODE_GENDER" class="form-control form-control-sm" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Gender <i class="bi bi-question-circle text-muted" title="Client's gender."></i></label>
+                                            <select class="form-select" name="CODE_GENDER">
                                                 <option value="F">Female</option>
                                                 <option value="M">Male</option>
                                             </select>
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Total Income (€)</label>
-                                            <input type="number" name="AMT_INCOME_TOTAL" class="form-control form-control-sm" value="150000" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Total Income <i class="bi bi-question-circle text-muted" title="Annual income of the client."></i></label>
+                                            <input type="number" step="any" class="form-control" name="AMT_INCOME_TOTAL" value="150000">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Credit Amount (€)</label>
-                                            <input type="number" name="AMT_CREDIT" class="form-control form-control-sm" value="500000" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Credit Amount <i class="bi bi-question-circle text-muted" title="Total loan amount requested."></i></label>
+                                            <input type="number" step="any" class="form-control" name="AMT_CREDIT" value="500000">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Annuity Amount (€)</label>
-                                            <input type="number" name="AMT_ANNUITY" class="form-control form-control-sm" value="25000" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Annuity Amount <i class="bi bi-question-circle text-muted" title="Monthly loan repayment amount."></i></label>
+                                            <input type="number" step="any" class="form-control" name="AMT_ANNUITY" value="25000">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Goods Price (€)</label>
-                                            <input type="number" name="AMT_GOODS_PRICE" class="form-control form-control-sm" value="450000" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Goods Price <i class="bi bi-question-circle text-muted" title="Price of the goods for which the loan is given."></i></label>
+                                            <input type="number" step="any" class="form-control" name="AMT_GOODS_PRICE" value="450000">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Education</label>
-                                            <select name="NAME_EDUCATION_TYPE" class="form-control form-control-sm" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Education <i class="bi bi-question-circle text-muted" title="Highest level of education achieved."></i></label>
+                                            <select class="form-select" name="NAME_EDUCATION_TYPE">
                                                 <option value="Secondary / secondary special">Secondary</option>
                                                 <option value="Higher education">Higher education</option>
                                                 <option value="Incomplete higher">Incomplete higher</option>
                                                 <option value="Lower secondary">Lower secondary</option>
                                             </select>
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Family Status</label>
-                                            <select name="NAME_FAMILY_STATUS" class="form-control form-control-sm" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Family Status <i class="bi bi-question-circle text-muted" title="Marital status of the client."></i></label>
+                                            <select class="form-select" name="NAME_FAMILY_STATUS">
                                                 <option value="Married">Married</option>
                                                 <option value="Single / not married">Single</option>
                                                 <option value="Civil marriage">Civil marriage</option>
@@ -127,27 +143,29 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Right Column: Employment & External -->
-                                <div class="simulator-column">
-                                    <h4 class="form-section-title">💼 Employment & Occupation</h4>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label class="form-label">Years Employed</label>
-                                            <input type="number" name="EMPLOYED_YEARS" class="form-control form-control-sm" value="5" required>
+                            <!-- Right Column: Employment & External -->
+                            <div class="col-md-6">
+                                <div class="card h-100 p-3 border">
+                                    <h4 class="mb-3 border-bottom pb-2">💼 Employment & Occupation</h4>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Years Employed <i class="bi bi-question-circle text-muted" title="Number of years the client has been in their current job."></i></label>
+                                            <input type="number" step="any" class="form-control" name="EMPLOYED_YEARS" value="5">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Income Type</label>
-                                            <select name="NAME_INCOME_TYPE" class="form-control form-control-sm" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Income Type <i class="bi bi-question-circle text-muted" title="Source of the client's income."></i></label>
+                                            <select class="form-select" name="NAME_INCOME_TYPE">
                                                 <option value="Working">Working</option>
                                                 <option value="Commercial associate">Commercial associate</option>
                                                 <option value="Pensioner">Pensioner</option>
                                                 <option value="State servant">State servant</option>
                                             </select>
                                         </div>
-                                        <div class="form-group" style="grid-column: 1 / -1;">
-                                            <label class="form-label">Occupation</label>
-                                            <select name="OCCUPATION_TYPE" class="form-control form-control-sm" required>
+                                        <div class="col-md-12">
+                                            <label class="form-label small fw-bold">Occupation <i class="bi bi-question-circle text-muted" title="Type of work the client performs."></i></label>
+                                            <select class="form-select" name="OCCUPATION_TYPE">
                                                 <option value="Laborers">Laborers</option>
                                                 <option value="Core staff">Core staff</option>
                                                 <option value="Managers">Managers</option>
@@ -157,73 +175,59 @@
                                                 <option value="missing">Other / Not specified</option>
                                             </select>
                                         </div>
-                                        
-                                        <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
-                                            <h5 class="form-section-title" style="font-size: 0.85rem;">🛡️ External Risk Scores</h5>
+                                    </div>
+
+                                    <h4 class="mb-3 border-bottom pb-2">🛡️ External Risk Scores</h4>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Ext Source 1 <i class="bi bi-question-circle text-muted" title="Normalized score from external data source 1 (0=Poor, 1=Excellent)."></i></label>
+                                            <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_1" value="0.5">
                                         </div>
-                                        
-                                        <div class="form-group">
-                                            <label class="form-label">Ext Source 1</label>
-                                            <input type="number" step="0.01" name="EXT_SOURCE_1" class="form-control form-control-sm" value="0.5">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Ext Source 2 <i class="bi bi-question-circle text-muted" title="Normalized score from external data source 2 (0=Poor, 1=Excellent)."></i></label>
+                                            <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_2" value="0.5">
                                         </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Ext Source 2</label>
-                                            <input type="number" step="0.01" name="EXT_SOURCE_2" class="form-control form-control-sm" value="0.5">
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="form-label">Ext Source 3</label>
-                                            <input type="number" step="0.01" name="EXT_SOURCE_3" class="form-control form-control-sm" value="0.5">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Ext Source 3 <i class="bi bi-question-circle text-muted" title="Normalized score from external data source 3 (0=Poor, 1=Excellent)."></i></label>
+                                            <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_3" value="0.5">
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Submit Button -->
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary btn-lg" id="simulateBtn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                        <polyline points="22 4 12 14.01 9 11.01"/>
-                                    </svg>
-                                    Check My Eligibility
-                                </button>
-                                <button type="reset" class="btn btn-secondary" onclick="resetForm()">Reset</button>
-                            </div>
-                        </form>
-                    </div>
+                        <button type="submit" class="btn btn-info w-100 fw-bold mt-4 text-white" id="simSubmitBtn">
+                            <span aria-hidden="true">✨</span> RUN END-USER SIMULATION
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Result Card (appears below after submit) -->
-                <div id="resultCard" class="card result-card hidden mt-lg" role="region" aria-live="polite">
-                    <div class="card-body">
-                        <div class="result-grid">
-                            <!-- Decision -->
-                            <div id="resultDecision" class="result-decision">
-                                <!-- APPROVED or REJECTED -->
-                            </div>
-                            
-                            <!-- Metrics -->
-                            <div class="result-metrics">
-                                <div class="metric-item">
-                                    <span class="metric-label">Risk Score</span>
-                                    <span id="resultProb" class="metric-value">--</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Threshold</span>
-                                    <span id="resultThreshold" class="metric-value">--</span>
-                                </div>
-                            </div>
-                            
-                            <!-- SHAP Explanation -->
-                            <div class="result-explanation">
-                                <h4>Key Decision Factors</h4>
-                                <div id="shapPlot" class="shap-container"></div>
-                            </div>
+                <div id="resultCard" class="card p-5 result-card mt-4" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">Analysis for Client #<span id="res_client_id"></span></h3>
+                        <span class="badge bg-secondary">Model: CreditScoring_BestModel</span>
+                    </div>
+                    <hr>
+                    <div class="row text-center my-4">
+                        <div class="col-md-6 border-end">
+                            <p class="text-muted mb-1">Probability of Default</p>
+                            <h2 id="res_prob" class="prob-value"></h2>
                         </div>
-                        
-                        <div class="alert alert-warning mt-md" style="font-size: 0.875rem;">
-                            <strong>⚠️ Disclaimer:</strong> This is a simulation only. Final decisions are made by credit analysts.
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Final Decision</p>
+                            <h2 id="res_decision" class="decision-value"></h2>
                         </div>
+                    </div>
+
+                    <div class="alert alert-light border text-center mb-4">
+                        Business Optimized Threshold: <strong><span id="res_threshold"></span></strong>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="mb-3"><i class="bi bi-info-circle"></i> Decision Transparency (SHAP)</h4>
+                        <p class="text-muted small">This chart shows which features pushed the score towards rejection (red) or acceptance (blue).</p>
+                        <div id="shapPlot" class="border rounded p-2 bg-white"></div>
                     </div>
                 </div>
             </div>
@@ -240,27 +244,67 @@
     </div>
 
     <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+
+        function displayResults(data) {
+            const resultCard = document.getElementById('resultCard');
+            
+            // Handle nested metadata if present (API update)
+            const modelName = data.metadata ? data.metadata.model_name : (data.model_name || 'Unknown Model');
+            const threshold = data.metadata ? data.metadata.threshold : (data.threshold || 0.5);
+            
+            document.getElementById('res_client_id').innerText = data.client_id;
+            document.getElementById('res_prob').innerText = (data.probability * 100).toFixed(1) + '%';
+            
+            // Decision
+            const decisionEl = document.getElementById('res_decision');
+            decisionEl.innerText = data.decision;
+            
+            // Apply color classes based on decision
+            if (data.decision === 'ACCEPTED') {
+                decisionEl.style.color = '#198754'; // Success green
+            } else {
+                decisionEl.style.color = '#dc3545'; // Danger red
+            }
+
+            document.getElementById('res_threshold').innerText = threshold;
+
+            // SHAP
+            document.getElementById('shapPlot').innerHTML = data.shap_html || '<p class="text-muted">No explainability data</p>';
+            
+            // Execute scripts in SHAP HTML
+            const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
+            for (let script of scripts) {
+                const newScript = document.createElement("script");
+                newScript.text = script.innerHTML;
+                document.body.appendChild(newScript).parentNode.removeChild(newScript);
+            }
+
+            resultCard.style.display = 'block';
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // End-user Simulator Submission
         document.getElementById('simulatorForm').onsubmit = async (e) => {
             e.preventDefault();
-            
-            const btn = document.getElementById('simulateBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Analyzing...';
-            
+            const submitBtn = document.getElementById('simSubmitBtn');
             const formData = new FormData(e.target);
             const rawFeatures = {};
-            
             formData.forEach((value, key) => {
-                if (value === '') {
-                    rawFeatures[key] = null;
-                } else if (!isNaN(value) && value.trim() !== '') {
-                    rawFeatures[key] = Number(value);
-                } else {
-                    rawFeatures[key] = value;
-                }
+                if (value === '') rawFeatures[key] = null;
+                else if (!isNaN(value) && value.trim() !== '') rawFeatures[key] = Number(value);
+                else rawFeatures[key] = value;
             });
 
-            // Map simplified fields to model features (Logic from old index.html)
+            // Map simplified fields to model features
             const features = {
                 ...rawFeatures,
                 DAYS_BIRTH: rawFeatures.AGE_YEARS ? -Math.abs(Number(rawFeatures.AGE_YEARS) * 365.25) : null,
@@ -280,6 +324,9 @@
             delete features.AGE_YEARS;
             delete features.EMPLOYED_YEARS;
 
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> SIMULATING...';
+
             try {
                 const response = await fetch('/predict', {
                     method: 'POST',
@@ -289,236 +336,16 @@
                         features: features
                     })
                 });
-
                 const data = await response.json();
-
-                if (data.error) {
-                    alert("Error: " + data.error);
-                } else {
-                    displayResults(data);
-                }
+                if (data.error) alert("Error: " + data.error);
+                else displayResults(data);
             } catch (err) {
                 alert("Simulation failed: " + err);
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg> Check My Eligibility`;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span aria-hidden="true">✨</span> RUN END-USER SIMULATION';
             }
         };
-
-        function displayResults(data) {
-            const resultCard = document.getElementById('resultCard');
-            
-            // Handle nested metadata if present (API update)
-            const modelName = data.metadata ? data.metadata.model_name : (data.model_name || 'Unknown Model');
-            const threshold = data.metadata ? data.metadata.threshold : (data.threshold || 0.5);
-            
-            // Decision
-            const decisionEl = document.getElementById('resultDecision');
-            if (data.decision === 'ACCEPTED') {
-                decisionEl.innerHTML = '<div class="decision-badge approved">✓ ELIGIBLE</div>';
-                decisionEl.className = 'result-decision approved';
-            } else {
-                decisionEl.innerHTML = '<div class="decision-badge rejected">✗ NOT ELIGIBLE</div>';
-                decisionEl.className = 'result-decision rejected';
-            }
-
-            // Metrics
-            document.getElementById('resultProb').innerText = (data.probability * 100).toFixed(1) + '%';
-            document.getElementById('resultThreshold').innerText = (threshold * 100).toFixed(1) + '%';
-
-            // SHAP
-            document.getElementById('shapPlot').innerHTML = data.shap_html || '<p class="text-muted">No explainability data</p>';
-            
-            // Execute scripts in SHAP HTML
-            const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
-            for (let script of scripts) {
-                const newScript = document.createElement("script");
-                newScript.text = script.innerHTML;
-                document.body.appendChild(newScript).parentNode.removeChild(newScript);
-            }
-
-            resultCard.classList.remove('hidden');
-            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function resetForm() {
-            document.getElementById('resultCard').classList.add('hidden');
-        }
-
-        function toggleMobileMenu() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        }
     </script>
-
-    <style>
-        /* Compact Simulator Styles */
-        .simulator-card {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .simulator-columns {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-
-        @media (min-width: 768px) {
-            .simulator-columns {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        .simulator-column {
-            background: var(--bg-secondary);
-            padding: 1.5rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-        }
-
-        .form-section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0 0 1rem 0;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-        }
-
-        .form-group {
-            margin-bottom: 0;
-        }
-
-        .form-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 0.25rem;
-        }
-
-        .form-control-sm {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border-color);
-            justify-content: center;
-        }
-
-        /* Result Card */
-        .result-card {
-            max-width: 1000px;
-            margin: 2rem auto 0;
-        }
-
-        .result-grid {
-            display: grid;
-            grid-template-columns: auto 1fr 2fr;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        @media (max-width: 768px) {
-            .result-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .result-decision {
-            text-align: center;
-        }
-
-        .decision-badge {
-            display: inline-block;
-            padding: 1rem 2rem;
-            border-radius: var(--radius-lg);
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-
-        .decision-badge.approved,
-        .result-decision.approved .decision-badge {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--success);
-        }
-
-        .decision-badge.rejected,
-        .result-decision.rejected .decision-badge {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger);
-        }
-
-        .result-metrics {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .metric-item {
-            background: var(--bg-tertiary);
-            padding: 1rem;
-            border-radius: var(--radius-md);
-            text-align: center;
-        }
-
-        .metric-item .metric-label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 0.25rem;
-        }
-
-        .metric-item .metric-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .result-explanation h4 {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin: 0 0 0.5rem 0;
-        }
-
-        .shap-container {
-            background: var(--bg-tertiary);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            min-height: 150px;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.75s linear infinite;
-            vertical-align: middle;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
 </body>
 </html>
