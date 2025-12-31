@@ -43,9 +43,61 @@ The entire environment (Jupyter + MLflow) is orchestrated via Docker Compose.
 docker-compose up --build
 `
 
-#### 3. Access the Services
-- **Jupyter Notebook**: [http://localhost:8888](http://localhost:8888) (Open mission7_notebook.ipynb)
-- **MLflow UI**: [http://localhost:5005](http://localhost:5005) (Track runs and registered models)
+#### 3. Access the Services (Development - Unique Ports)
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Jupyter Notebook** | [http://localhost:8870](http://localhost:8870) | Open `mission7.ipynb` |
+| **MLflow UI (Dev)** | [http://localhost:5075](http://localhost:5075) | Track runs and registered models |
+| **API** | [http://localhost:8070](http://localhost:8070) | REST API for predictions |
+| **Dashboard (nginx)** | [http://localhost:8071](http://localhost:8071) | Web interface |
+| **Postgres** | `localhost:5470` | Database (dev mode uses SQLite) |
+
+---
+
+### 🚀 Production Deployment
+
+#### Option 1: Docker Compose (Recommended)
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### Option 2: AWS Lightsail
+```bash
+./scripts/setup_lightsail.sh
+```
+
+#### CI/CD Pipeline
+- Push to `main` branch triggers GitHub Actions
+- Tests run automatically via pytest
+- Docker image built and verified
+- Deploy to Lightsail (requires secrets)
+
+---
+
+### 📊 Model Performance
+
+| Metric | Value |
+|--------|-------|
+| **Algorithm** | LightGBM |
+| **Business Cost** | 0.5354 |
+| **Optimal Threshold** | 0.45 |
+| **AUC** | ~0.75 |
+| **Features** | 125 |
+
+---
+
+### 🔧 API Endpoints
+
+```bash
+# Health check
+curl http://localhost:8070/api/health
+
+# Model info
+curl http://localhost:8070/api/model/info
+
+# Prediction
+curl -X POST http://localhost:8070/predict -d "client_id=100002"
+```
 
 ---
 
