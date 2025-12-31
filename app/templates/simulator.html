@@ -74,116 +74,106 @@
                     
                     <div class="card-body">
                         <form id="simulatorForm">
-                            <!-- Row 1: Personal Info -->
-                            <div class="form-section">
-                                <h4 class="form-section-title">👤 Personal Information</h4>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label class="form-label">Gender</label>
-                                        <select name="CODE_GENDER" class="form-control form-control-sm" required>
-                                            <option value="">Select...</option>
-                                            <option value="M">Male</option>
-                                            <option value="F">Female</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Age</label>
-                                        <input type="number" name="AGE_YEARS" class="form-control form-control-sm" min="18" max="100" placeholder="Years" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Family Status</label>
-                                        <select name="NAME_FAMILY_STATUS" class="form-control form-control-sm" required>
-                                            <option value="">Select...</option>
-                                            <option value="Single / not married">Single</option>
-                                            <option value="Married">Married</option>
-                                            <option value="Civil marriage">Civil Marriage</option>
-                                            <option value="Separated">Separated</option>
-                                            <option value="Widow">Widow(er)</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Children</label>
-                                        <input type="number" name="CNT_CHILDREN" class="form-control form-control-sm" min="0" max="20" value="0" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Family Members</label>
-                                        <input type="number" name="CNT_FAM_MEMBERS" class="form-control form-control-sm" min="1" max="20" value="1" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Education</label>
-                                        <select name="NAME_EDUCATION_TYPE" class="form-control form-control-sm" required>
-                                            <option value="">Select...</option>
-                                            <option value="Lower secondary">Lower Secondary</option>
-                                            <option value="Secondary / secondary special">Secondary</option>
-                                            <option value="Incomplete higher">Incomplete Higher</option>
-                                            <option value="Higher education">Higher Education</option>
-                                            <option value="Academic degree">Academic Degree</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Employment & Income -->
-                            <div class="form-section">
-                                <h4 class="form-section-title">💼 Employment & Income</h4>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label class="form-label">Income Type</label>
-                                        <select name="NAME_INCOME_TYPE" class="form-control form-control-sm" required>
-                                            <option value="">Select...</option>
-                                            <option value="Working">Employee</option>
-                                            <option value="Commercial associate">Commercial</option>
-                                            <option value="State servant">State Servant</option>
-                                            <option value="Pensioner">Pensioner</option>
-                                            <option value="Student">Student</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Annual Income (€)</label>
-                                        <input type="number" name="AMT_INCOME_TOTAL" class="form-control form-control-sm" min="0" step="1000" placeholder="e.g. 45000" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Years Employed</label>
-                                        <input type="number" name="YEARS_EMPLOYED" class="form-control form-control-sm" min="0" max="50" step="0.5" placeholder="Years" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Organization</label>
-                                        <select name="ORGANIZATION_TYPE" class="form-control form-control-sm" required>
-                                            <option value="">Select...</option>
-                                            <option value="Business Entity Type 3">Business</option>
-                                            <option value="Government">Government</option>
-                                            <option value="School">Education</option>
-                                            <option value="Medicine">Healthcare</option>
-                                            <option value="Self-employed">Self-employed</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                            <div class="simulator-columns">
+                                <!-- Left Column: Personal & Financial -->
+                                <div class="simulator-column">
+                                    <h4 class="form-section-title">👤 Personal & Financial</h4>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label class="form-label">Age (Years)</label>
+                                            <input type="number" name="AGE_YEARS" class="form-control form-control-sm" value="35" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Gender</label>
+                                            <select name="CODE_GENDER" class="form-control form-control-sm" required>
+                                                <option value="F">Female</option>
+                                                <option value="M">Male</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Total Income (€)</label>
+                                            <input type="number" name="AMT_INCOME_TOTAL" class="form-control form-control-sm" value="150000" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Credit Amount (€)</label>
+                                            <input type="number" name="AMT_CREDIT" class="form-control form-control-sm" value="500000" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Annuity Amount (€)</label>
+                                            <input type="number" name="AMT_ANNUITY" class="form-control form-control-sm" value="25000" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Goods Price (€)</label>
+                                            <input type="number" name="AMT_GOODS_PRICE" class="form-control form-control-sm" value="450000" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Education</label>
+                                            <select name="NAME_EDUCATION_TYPE" class="form-control form-control-sm" required>
+                                                <option value="Secondary / secondary special">Secondary</option>
+                                                <option value="Higher education">Higher education</option>
+                                                <option value="Incomplete higher">Incomplete higher</option>
+                                                <option value="Lower secondary">Lower secondary</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Family Status</label>
+                                            <select name="NAME_FAMILY_STATUS" class="form-control form-control-sm" required>
+                                                <option value="Married">Married</option>
+                                                <option value="Single / not married">Single</option>
+                                                <option value="Civil marriage">Civil marriage</option>
+                                                <option value="Widow">Widow</option>
+                                                <option value="Separated">Separated</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Row 3: Loan Request -->
-                            <div class="form-section">
-                                <h4 class="form-section-title">🏦 Loan Request</h4>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label class="form-label">Loan Amount (€)</label>
-                                        <input type="number" name="AMT_CREDIT" class="form-control form-control-sm" min="1000" step="1000" placeholder="e.g. 150000" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Monthly Payment (€)</label>
-                                        <input type="number" name="AMT_ANNUITY" class="form-control form-control-sm" min="50" step="50" placeholder="e.g. 500" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Loan Type</label>
-                                        <select name="NAME_CONTRACT_TYPE" class="form-control form-control-sm" required>
-                                            <option value="">Select...</option>
-                                            <option value="Cash loans">Cash Loan</option>
-                                            <option value="Revolving loans">Revolving Credit</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Credit Score (0-1)</label>
-                                        <input type="number" name="EXT_SOURCE_2" class="form-control form-control-sm" min="0" max="1" step="0.01" placeholder="Optional">
+                                <!-- Right Column: Employment & External -->
+                                <div class="simulator-column">
+                                    <h4 class="form-section-title">💼 Employment & Occupation</h4>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label class="form-label">Years Employed</label>
+                                            <input type="number" name="EMPLOYED_YEARS" class="form-control form-control-sm" value="5" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Income Type</label>
+                                            <select name="NAME_INCOME_TYPE" class="form-control form-control-sm" required>
+                                                <option value="Working">Working</option>
+                                                <option value="Commercial associate">Commercial associate</option>
+                                                <option value="Pensioner">Pensioner</option>
+                                                <option value="State servant">State servant</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="grid-column: 1 / -1;">
+                                            <label class="form-label">Occupation</label>
+                                            <select name="OCCUPATION_TYPE" class="form-control form-control-sm" required>
+                                                <option value="Laborers">Laborers</option>
+                                                <option value="Core staff">Core staff</option>
+                                                <option value="Managers">Managers</option>
+                                                <option value="Drivers">Drivers</option>
+                                                <option value="Sales staff">Sales staff</option>
+                                                <option value="Accountants">Accountants</option>
+                                                <option value="missing">Other / Not specified</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
+                                            <h5 class="form-section-title" style="font-size: 0.85rem;">🛡️ External Risk Scores</h5>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label">Ext Source 1</label>
+                                            <input type="number" step="0.01" name="EXT_SOURCE_1" class="form-control form-control-sm" value="0.5">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Ext Source 2</label>
+                                            <input type="number" step="0.01" name="EXT_SOURCE_2" class="form-control form-control-sm" value="0.5">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Ext Source 3</label>
+                                            <input type="number" step="0.01" name="EXT_SOURCE_3" class="form-control form-control-sm" value="0.5">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -258,39 +248,37 @@
             btn.innerHTML = '<span class="spinner"></span> Analyzing...';
             
             const formData = new FormData(e.target);
-            const features = {};
+            const rawFeatures = {};
             
             formData.forEach((value, key) => {
                 if (value === '') {
-                    features[key] = null;
+                    rawFeatures[key] = null;
                 } else if (!isNaN(value) && value.trim() !== '') {
-                    features[key] = Number(value);
+                    rawFeatures[key] = Number(value);
                 } else {
-                    features[key] = value;
+                    rawFeatures[key] = value;
                 }
             });
 
-            // Convert to model features
-            const modelFeatures = {
-                CODE_GENDER: features.CODE_GENDER,
-                NAME_FAMILY_STATUS: features.NAME_FAMILY_STATUS,
-                CNT_CHILDREN: features.CNT_CHILDREN,
-                CNT_FAM_MEMBERS: features.CNT_FAM_MEMBERS,
-                NAME_EDUCATION_TYPE: features.NAME_EDUCATION_TYPE,
-                NAME_INCOME_TYPE: features.NAME_INCOME_TYPE,
-                AMT_INCOME_TOTAL: features.AMT_INCOME_TOTAL,
-                ORGANIZATION_TYPE: features.ORGANIZATION_TYPE,
-                AMT_CREDIT: features.AMT_CREDIT,
-                AMT_ANNUITY: features.AMT_ANNUITY,
-                NAME_CONTRACT_TYPE: features.NAME_CONTRACT_TYPE,
-                EXT_SOURCE_2: features.EXT_SOURCE_2,
-                DAYS_BIRTH: features.AGE_YEARS ? -features.AGE_YEARS * 365 : null,
-                DAYS_EMPLOYED: features.YEARS_EMPLOYED ? -features.YEARS_EMPLOYED * 365 : null,
-                CREDIT_INCOME_PERCENT: features.AMT_CREDIT && features.AMT_INCOME_TOTAL ?
-                    features.AMT_CREDIT / features.AMT_INCOME_TOTAL : null,
-                ANNUITY_INCOME_PERCENT: features.AMT_ANNUITY && features.AMT_INCOME_TOTAL ?
-                    features.AMT_ANNUITY / features.AMT_INCOME_TOTAL : null,
+            // Map simplified fields to model features (Logic from old index.html)
+            const features = {
+                ...rawFeatures,
+                DAYS_BIRTH: rawFeatures.AGE_YEARS ? -Math.abs(Number(rawFeatures.AGE_YEARS) * 365.25) : null,
+                DAYS_EMPLOYED: rawFeatures.EMPLOYED_YEARS ? -Math.abs(Number(rawFeatures.EMPLOYED_YEARS) * 365.25) : null, 
+                SK_ID_CURR: 999999, // Dummy ID
+                CNT_CHILDREN: 0,
+                NAME_CONTRACT_TYPE: 'Cash loans',
+                FLAG_OWN_CAR: 'N',
+                FLAG_OWN_REALTY: 'Y',
+                // Ensure these are passed if they exist in rawFeatures
+                EXT_SOURCE_1: rawFeatures.EXT_SOURCE_1,
+                EXT_SOURCE_2: rawFeatures.EXT_SOURCE_2,
+                EXT_SOURCE_3: rawFeatures.EXT_SOURCE_3
             };
+
+            // Clean up helper fields
+            delete features.AGE_YEARS;
+            delete features.EMPLOYED_YEARS;
 
             try {
                 const response = await fetch('/predict', {
@@ -298,7 +286,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         client_id: 'Simulation_' + Date.now(),
-                        features: modelFeatures
+                        features: features
                     })
                 });
 
@@ -323,6 +311,10 @@
         function displayResults(data) {
             const resultCard = document.getElementById('resultCard');
             
+            // Handle nested metadata if present (API update)
+            const modelName = data.metadata ? data.metadata.model_name : (data.model_name || 'Unknown Model');
+            const threshold = data.metadata ? data.metadata.threshold : (data.threshold || 0.5);
+            
             // Decision
             const decisionEl = document.getElementById('resultDecision');
             if (data.decision === 'ACCEPTED') {
@@ -335,7 +327,7 @@
 
             // Metrics
             document.getElementById('resultProb').innerText = (data.probability * 100).toFixed(1) + '%';
-            document.getElementById('resultThreshold').innerText = (data.threshold * 100).toFixed(1) + '%';
+            document.getElementById('resultThreshold').innerText = (threshold * 100).toFixed(1) + '%';
 
             // SHAP
             document.getElementById('shapPlot').innerHTML = data.shap_html || '<p class="text-muted">No explainability data</p>';
@@ -364,20 +356,27 @@
     <style>
         /* Compact Simulator Styles */
         .simulator-card {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
-        .form-section {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
+        .simulator-columns {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
         }
 
-        .form-section:last-of-type {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
+        @media (min-width: 768px) {
+            .simulator-columns {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .simulator-column {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
         }
 
         .form-section-title {
@@ -385,6 +384,8 @@
             font-weight: 600;
             color: var(--text-primary);
             margin: 0 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .form-grid {
@@ -417,11 +418,12 @@
             margin-top: 1.5rem;
             padding-top: 1.5rem;
             border-top: 1px solid var(--border-color);
+            justify-content: center;
         }
 
         /* Result Card */
         .result-card {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 2rem auto 0;
         }
 
