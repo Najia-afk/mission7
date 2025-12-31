@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Réglementaire - Credit Scoring | Prêt à dépenser</title>
+    <meta name="description" content="Documentation d'audit pour BCE et FINMA - Modèle de scoring crédit">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-dark: #1a365d;
+            --success-green: #166534;
+            --text-primary: #1e293b;
+        }
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-primary);
+        }
+        .header-banner {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #2563eb 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .badge-compliance {
+            background-color: #dcfce7;
+            color: var(--success-green);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .metric-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        .metric-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .checklist-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+        .api-endpoint {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+        @media print {
+            .no-print { display: none; }
+            .section-card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header-banner">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="bi bi-shield-check"></i> Audit Réglementaire</h1>
+                    <p class="mb-0 opacity-75">Documentation de conformité pour BCE et FINMA</p>
+                </div>
+                <div class="no-print">
+                    <span class="badge-compliance me-2"><i class="bi bi-check-circle"></i> BCE Conforme</span>
+                    <span class="badge-compliance"><i class="bi bi-check-circle"></i> FINMA Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-5">
+        <!-- Executive Summary -->
+        <section class="section-card">
+            <h2 class="mb-4"><i class="bi bi-file-earmark-text"></i> Résumé Exécutif</h2>
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="lead">
+                        Ce document présente la documentation d'audit du modèle de scoring crédit 
+                        <strong>"CreditScoring_BestModel"</strong> déployé par Prêt à dépenser pour 
+                        l'évaluation automatisée des demandes de crédit.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Conforme aux exigences BCE pour les modèles de risque</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Conforme à la Circulaire FINMA 2008/21</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Conforme au RGPD Article 22 (droit à l'explication)</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Accessibilité WCAG 2.1 niveau AA</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-box">
+                        <div class="metric-label">Date de l'audit</div>
+                        <div class="metric-value" id="audit-date">--</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Model Identification -->
+        <section class="section-card">
+            <h2 class="mb-4"><i class="bi bi-cpu"></i> Identification du Modèle</h2>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-label">Type de modèle</div>
+                        <div class="metric-value fs-4" id="model-type">LightGBM</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-label">Seuil optimal</div>
+                        <div class="metric-value" id="threshold">0.45</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-label">Nombre de features</div>
+                        <div class="metric-value" id="features-count">125</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-label">Coût métier</div>
+                        <div class="metric-value" id="business-cost">0.535</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h4>Logique de décision</h4>
+                <div class="alert alert-info">
+                    <strong>Règle de décision :</strong> 
+                    <code>REJECTED si P(défaut) ≥ seuil (0.45) | ACCEPTED sinon</code>
+                    <br>
+                    <small class="text-muted">Le seuil est optimisé pour minimiser le coût métier avec ratio FN:FP = 10:1</small>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Metrics -->
+        <section class="section-card">
+            <h2 class="mb-4"><i class="bi bi-graph-up"></i> Métriques de Performance</h2>
+            <div class="row g-4" id="metrics-container">
+                <div class="col-md-2">
+                    <div class="metric-box">
+                        <div class="metric-label">AUC-ROC</div>
+                        <div class="metric-value" id="auc-roc">--</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="metric-box">
+                        <div class="metric-label">Recall</div>
+                        <div class="metric-value" id="recall">--</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="metric-box">
+                        <div class="metric-label">Precision</div>
+                        <div class="metric-value" id="precision">--</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="metric-box">
+                        <div class="metric-label">F1-Score</div>
+                        <div class="metric-value" id="f1-score">--</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="metric-box">
+                        <div class="metric-label">Accuracy</div>
+                        <div class="metric-value" id="accuracy">--</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Regulatory Compliance -->
+        <section class="section-card">
+            <h2 class="mb-4"><i class="bi bi-clipboard-check"></i> Conformité Réglementaire</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>BCE Guidelines</h4>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Documentation du modèle</strong>
+                        <p class="text-muted mb-0 small">Model Card complet avec métriques et limitations</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Validation indépendante</strong>
+                        <p class="text-muted mb-0 small">Tests unitaires et validation croisée</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Monitoring continu</strong>
+                        <p class="text-muted mb-0 small">Détection de drift avec Evidently AI</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h4>FINMA Circular 2008/21</h4>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Gestion des risques</strong>
+                        <p class="text-muted mb-0 small">Seuil optimisé pour le risque métier</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Traçabilité</strong>
+                        <p class="text-muted mb-0 small">MLflow pour l'historique des expériences</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>Audit trail</strong>
+                        <p class="text-muted mb-0 small">Logging PostgreSQL des prédictions</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h4>RGPD Article 22</h4>
+                <div class="checklist-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <strong>Droit à l'explication</strong>
+                    <p class="text-muted mb-0 small">Valeurs SHAP calculées pour chaque prédiction - visualisation interactive</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- API Endpoints -->
+        <section class="section-card no-print">
+            <h2 class="mb-4"><i class="bi bi-plug"></i> Points d'accès API</h2>
+            <p class="text-muted">Endpoints disponibles pour l'audit programmatique :</p>
+            
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Description</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="api-endpoint">/api/audit/model-governance</code></td>
+                            <td>Rapport complet de gouvernance</td>
+                            <td><a href="/api/audit/model-governance" target="_blank" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+                        </tr>
+                        <tr>
+                            <td><code class="api-endpoint">/api/audit/model-card</code></td>
+                            <td>Model Card (format Google)</td>
+                            <td><a href="/api/audit/model-card" target="_blank" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+                        </tr>
+                        <tr>
+                            <td><code class="api-endpoint">/api/audit/features</code></td>
+                            <td>Liste complète des features</td>
+                            <td><a href="/api/audit/features" target="_blank" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+                        </tr>
+                        <tr>
+                            <td><code class="api-endpoint">/api/audit/predictions</code></td>
+                            <td>Journal des prédictions (audit trail)</td>
+                            <td><a href="/api/audit/predictions" target="_blank" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+                        </tr>
+                        <tr>
+                            <td><code class="api-endpoint">/api/audit/drift-report</code></td>
+                            <td>Rapport de drift des données</td>
+                            <td><a href="/api/audit/drift-report" target="_blank" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+                        </tr>
+                        <tr>
+                            <td><code class="api-endpoint">/api/model/info</code></td>
+                            <td>Informations du modèle en production</td>
+                            <td><a href="/api/model/info" target="_blank" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- WCAG Compliance -->
+        <section class="section-card">
+            <h2 class="mb-4"><i class="bi bi-universal-access"></i> Accessibilité (WCAG 2.1 AA)</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>1.1.1 Non-text Content</strong>
+                        <p class="text-muted mb-0 small">Tous les contenus non-textuels ont des alternatives</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>1.4.1 Use of Color</strong>
+                        <p class="text-muted mb-0 small">Les décisions incluent icônes + texte, pas seulement couleur</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>1.4.3 Contrast (Minimum)</strong>
+                        <p class="text-muted mb-0 small">Ratio de contraste ≥ 4.5:1 pour tout le texte</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>1.4.4 Resize Text</strong>
+                        <p class="text-muted mb-0 small">Texte redimensionnable jusqu'à 200%</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>2.4.1 Bypass Blocks</strong>
+                        <p class="text-muted mb-0 small">Lien "skip to content" pour navigation clavier</p>
+                    </div>
+                    <div class="checklist-item">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>2.4.7 Focus Visible</strong>
+                        <p class="text-muted mb-0 small">Indicateurs de focus visibles sur tous les éléments interactifs</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Print / Export -->
+        <div class="text-center no-print">
+            <button onclick="window.print()" class="btn btn-primary btn-lg">
+                <i class="bi bi-printer"></i> Imprimer ce rapport
+            </button>
+            <a href="/" class="btn btn-outline-secondary btn-lg ms-2">
+                <i class="bi bi-arrow-left"></i> Retour au dashboard
+            </a>
+        </div>
+    </main>
+
+    <footer class="text-center py-4 text-muted">
+        <small>
+            &copy; 2025 Prêt à dépenser | Document généré le <span id="generation-date"></span>
+        </small>
+    </footer>
+
+    <script>
+        // Set current date
+        const now = new Date();
+        document.getElementById('audit-date').textContent = now.toLocaleDateString('fr-FR');
+        document.getElementById('generation-date').textContent = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR');
+
+        // Fetch model governance data
+        fetch('/api/audit/model-governance')
+            .then(r => r.json())
+            .then(data => {
+                if (data.model_identification) {
+                    document.getElementById('model-type').textContent = data.model_identification.type || 'LightGBM';
+                }
+                if (data.performance_metrics) {
+                    const m = data.performance_metrics;
+                    document.getElementById('threshold').textContent = m.optimal_threshold?.toFixed(2) || '0.45';
+                    document.getElementById('business-cost').textContent = m.business_cost?.toFixed(3) || '--';
+                    document.getElementById('auc-roc').textContent = m.auc_roc?.toFixed(3) || '--';
+                    document.getElementById('recall').textContent = m.recall_at_threshold?.toFixed(3) || '--';
+                    document.getElementById('precision').textContent = m.precision_at_threshold?.toFixed(3) || '--';
+                    document.getElementById('f1-score').textContent = m.f1_score?.toFixed(3) || '--';
+                }
+                if (data.feature_information) {
+                    document.getElementById('features-count').textContent = data.feature_information.total_features || '125';
+                }
+            })
+            .catch(err => console.error('Error loading audit data:', err));
+    </script>
+</body>
+</html>
