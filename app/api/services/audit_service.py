@@ -21,11 +21,27 @@ class AuditService:
     def __init__(self):
         self.config = get_config()
     
+    def _load_metadata(self) -> Dict[str, Any]:
+        """Load model metadata from production artifacts."""
+        try:
+            if os.path.exists(self.config.PROD_METADATA_PATH):
+                with open(self.config.PROD_METADATA_PATH, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load metadata from {self.config.PROD_METADATA_PATH}: {e}")
+        return {}
+
     def get_model_governance(self) -> Dict[str, Any]:
         """
         Get comprehensive model governance information for BCE/FINMA audit.
         Returns FLAT structure for API compatibility.
         """
+        metadata = self._load_metadata()
+        metrics = metadata.get('metrics', {})
+        
+        # Extract values with fallbacks only if metadata is missing
+        threshold = metadata.get('optimal_threshold', self.config.DEFAULT_THRESHOLD)
+        
         return {
             "audit_timestamp": datetime.now().isoformat(),
             "regulatory_framework": {
@@ -37,22 +53,34 @@ class AuditService:
                 ]
             },
             "model_identification": {
-                "model_name": self.config.MODEL_NAME,
-                "model_version": self._get_model_version(),
-                "model_type": "LightGBM Classifier",
-                "deployment_date": self._get_deployment_date()
+                "model_name": metadata.get('model_name', self.config.MODEL_NAME),
+                "model_version": metadata.get('model_version', self._get_model_version()),
+                "model_type": f"{metadata.get('algorithm', 'LightGBM')} Classifier",
+                "deployment_date": metadata.get('export_date', self._get_deployment_date())
             },
             "business_rules": {
-                "threshold": self.config.DEFAULT_THRESHOLD,
+                "threshold": threshold,
                 "fn_cost": 10,
                 "fp_cost": 1,
                 "cost_ratio": "10:1 (Default vs Opportunity)"
+            },
+            "performance_metrics": {
+                "auc_roc": metrics.get('auc_roc'),
+                "recall_at_threshold": metrics.get('recall'),
+                "precision_at_threshold": metrics.get('precision'),
+                "f1_score": metrics.get('f1_score'),
+                "accuracy": metrics.get('accuracy'),
+                "optimal_threshold": threshold,
+                "business_cost": metrics.get('business_cost_avg')
             },
             "compliance_status": {
                 "drift_monitoring": "enabled",
                 "explainability": "SHAP enabled",
                 "audit_trail": "PostgreSQL logging",
                 "next_review": self._calculate_next_review()
+            },
+            "feature_information": {
+                "total_features": metadata.get('n_features', 125)
             }
         }
     
@@ -61,11 +89,15 @@ class AuditService:
         Get model card for transparency and documentation.
         Returns FLAT structure (Google Model Cards format).
         """
+        metadata = self._load_metadata()
+        metrics = metadata.get('metrics', {})
+        threshold = metadata.get('optimal_threshold', self.config.DEFAULT_THRESHOLD)
+
         return {
             "model_details": {
-                "name": "Credit Risk Scoring Model",
-                "type": "LightGBM Classifier",
-                "version": self._get_model_version(),
+                "name": metadata.get('model_name', "Credit Risk Scoring Model"),
+                "type": f"{metadata.get('algorithm', 'LightGBM')} Classifier",
+                "version": metadata.get('model_version', self._get_model_version()),
                 "owner": "Risk Management Team"
             },
             "intended_use": {
@@ -74,14 +106,14 @@ class AuditService:
                 "out_of_scope": ["Commercial lending", "Mortgage decisions"]
             },
             "metrics": {
-                "auc_roc": 0.77,
+                "auc_roc": metrics.get('auc_roc'),
                 "business_cost": "Optimized (FN=10x FP)",
-                "threshold": self.config.DEFAULT_THRESHOLD
+                "threshold": threshold
             },
             "training_data": {
                 "source": "Home Credit Default Risk Dataset",
-                "size": "307,511 applications",
-                "features": "122 original features"
+                "size": f"{metadata.get('test_set_size', 307511)} (Test Set) / Full Dataset",
+                "features": f"{metadata.get('n_features', 122)} original features"
             },
             "ethical_considerations": {
                 "fairness_testing": "Conducted across demographic groups",

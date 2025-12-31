@@ -95,11 +95,11 @@
                         <h3>Model Info</h3>
                         <div class="grid grid-2 gap-md">
                             <div class="metric-box">
-                                <div class="metric-value" id="model-type">LightGBM</div>
+                                <div class="metric-value" id="model-type">--</div>
                                 <div class="metric-label">Model Type</div>
                             </div>
                             <div class="metric-box">
-                                <div class="metric-value" id="model-threshold">0.45</div>
+                                <div class="metric-value" id="model-threshold">--</div>
                                 <div class="metric-label">Threshold</div>
                             </div>
                         </div>
@@ -136,11 +136,11 @@
             .then(r => r.json())
             .then(data => {
                 if (data.model_identification) {
-                    document.getElementById('model-type').textContent = data.model_identification.type || 'LightGBM';
+                    document.getElementById('model-type').textContent = data.model_identification.model_type || '--';
                 }
                 if (data.performance_metrics) {
                     document.getElementById('model-threshold').textContent = 
-                        data.performance_metrics.optimal_threshold?.toFixed(2) || '0.45';
+                        data.performance_metrics.optimal_threshold !== undefined ? data.performance_metrics.optimal_threshold.toFixed(2) : '--';
                 }
             })
             .catch(console.error);

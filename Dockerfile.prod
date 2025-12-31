@@ -27,8 +27,15 @@ COPY src/ ./src/
 # Production models
 COPY prod_models/ ./prod_models/
 
+# Scripts (for artifact sync)
+COPY scripts/ ./scripts/
+
 # Tests
 COPY tests/ ./tests/
+
+# Entrypoint script
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
 # Set environment variables
 ENV PYTHONPATH=/app:/app/src
@@ -43,5 +50,5 @@ EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5001/api/health || exit 1
 
-# Run with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "2", "--timeout", "120", "app.wsgi:app"]
+# Run with entrypoint (syncs artifacts then starts Gunicorn)
+CMD ["./entrypoint.sh"]

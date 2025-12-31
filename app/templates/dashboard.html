@@ -345,7 +345,7 @@
                 
                 // Data is in metadata object
                 const meta = data.metadata || {};
-                const modelName = meta.model_name || 'File Model';
+                const modelName = meta.model_name || '--';
                 const modelVersion = meta.model_version || '-';
                 const aucRoc = meta.metrics?.auc_roc;
                 const threshold = data.threshold || meta.optimal_threshold;

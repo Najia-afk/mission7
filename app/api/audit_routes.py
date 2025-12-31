@@ -1,9 +1,11 @@
 # app/api/audit_routes.py
 """
 Audit and Governance API routes for BCE/FINMA compliance.
+Supports both file-based and database-backed artifact retrieval.
 """
 import os
-from flask import Blueprint, jsonify, send_file, abort
+import json
+from flask import Blueprint, jsonify, send_file, abort, Response, request
 from datetime import datetime, timezone
 
 from app.api.services.audit_service import AuditService
@@ -13,6 +15,32 @@ audit_bp = Blueprint('audit', __name__, url_prefix='/api/audit')
 
 # Service instance
 audit_service = AuditService()
+
+
+def get_artifact_from_db(model_id, artifact_type):
+    """
+    Retrieve artifact from PostgreSQL database.
+    
+    Args:
+        model_id: Model's run_id or 'latest' for most recent
+        artifact_type: Type of artifact (metadata, drift_report_html, etc.)
+    
+    Returns:
+        dict with artifact data or None
+    """
+    try:
+        # Import here to avoid circular imports
+        from scripts.sync_artifacts_to_db import get_artifact, get_db_uri
+        config = get_config()
+        db_uri = config.DB_URI if config.USE_POSTGRES else None
+        
+        if not db_uri:
+            return None
+        
+        return get_artifact(model_id, artifact_type, db_uri)
+    except Exception as e:
+        print(f"Error fetching artifact from DB: {e}")
+        return None
 
 
 @audit_bp.route('/model-governance')
@@ -169,21 +197,43 @@ def drift_report():
 @audit_bp.route('/drift-report-html')
 def drift_report_html():
     """
-    Evidently HTML drift report
+    Evidently HTML drift report (from database)
     ---
     tags:
       - Audit
     produces:
       - text/html
+    parameters:
+      - name: model_id
+        in: query
+        type: string
+        required: false
+        description: Model run_id (defaults to 'latest')
     responses:
       200:
         description: Interactive Evidently drift report
       404:
         description: Report not found
     """
+    model_id = request.args.get('model_id', 'latest')
     config = get_config()
+    
+    # Try database first (preferred for audit compliance)
+    if config.USE_POSTGRES:
+        artifact = get_artifact_from_db(model_id, 'drift_report_html')
+        if artifact and artifact.get('artifact_data'):
+            return Response(
+                artifact['artifact_data'],
+                mimetype='text/html',
+                headers={
+                    'X-Model-ID': artifact.get('model_id', 'unknown'),
+                    'X-Artifact-Name': artifact.get('artifact_name', 'drift_report.html'),
+                    'X-Source': 'database'
+                }
+            )
+    
+    # Fallback to file system
     prod_models_dir = os.path.dirname(config.PROD_MODEL_PATH)
-    # Try both possible filenames for drift report
     html_report_path = os.path.join(prod_models_dir, "evidently_data_drift_report.html")
     if not os.path.exists(html_report_path):
         html_report_path = os.path.join(prod_models_dir, "drift_report.html")
@@ -196,3 +246,142 @@ def drift_report_html():
         )
     
     abort(404, description="Drift report HTML not found. Run drift analysis first.")
+
+
+@audit_bp.route('/artifact/<artifact_type>')
+@audit_bp.route('/artifact/<artifact_type>/<model_id>')
+def get_artifact_endpoint(artifact_type, model_id='latest'):
+    """
+    Get artifact from database
+    ---
+    tags:
+      - Audit
+    parameters:
+      - name: artifact_type
+        in: path
+        type: string
+        required: true
+        enum: [metadata, threshold, drift_report_html, drift_report_json, feature_names]
+        description: Type of artifact to retrieve
+      - name: model_id
+        in: path
+        type: string
+        required: false
+        description: Model run_id (defaults to 'latest')
+    responses:
+      200:
+        description: Artifact data
+      404:
+        description: Artifact not found
+      400:
+        description: PostgreSQL mode required
+    """
+    config = get_config()
+    
+    if not config.USE_POSTGRES:
+        return jsonify({
+            "error": "Database artifact retrieval requires PostgreSQL mode",
+            "use_postgres": False
+        }), 400
+    
+    valid_types = ['metadata', 'threshold', 'drift_report_html', 'drift_report_json', 'feature_names']
+    if artifact_type not in valid_types:
+        return jsonify({
+            "error": f"Invalid artifact type. Valid types: {valid_types}"
+        }), 400
+    
+    artifact = get_artifact_from_db(model_id, artifact_type)
+    
+    if not artifact:
+        abort(404, description=f"Artifact '{artifact_type}' not found for model '{model_id}'")
+    
+    # For HTML artifacts, return as HTML response
+    if artifact_type == 'drift_report_html' and artifact.get('artifact_data'):
+        return Response(
+            artifact['artifact_data'],
+            mimetype='text/html',
+            headers={
+                'Content-Disposition': f'inline; filename="{artifact.get("artifact_name", "report.html")}"',
+                'X-Model-ID': artifact.get('model_id', 'unknown'),
+                'X-Source': 'database'
+            }
+        )
+    
+    # For JSON artifacts, return parsed JSON or raw data
+    if artifact.get('artifact_json'):
+        return jsonify({
+            "model_id": artifact.get('model_id'),
+            "artifact_type": artifact_type,
+            "artifact_name": artifact.get('artifact_name'),
+            "created_at": artifact.get('created_at'),
+            "source": "database",
+            "data": artifact['artifact_json']
+        })
+    
+    # Return raw data as JSON wrapper
+    return jsonify({
+        "model_id": artifact.get('model_id'),
+        "artifact_type": artifact_type,
+        "artifact_name": artifact.get('artifact_name'),
+        "created_at": artifact.get('created_at'),
+        "source": "database",
+        "data": artifact.get('artifact_data')
+    })
+
+
+@audit_bp.route('/download/<artifact_type>')
+@audit_bp.route('/download/<artifact_type>/<model_id>')
+def download_artifact(artifact_type, model_id='latest'):
+    """
+    Download artifact as file
+    ---
+    tags:
+      - Audit
+    parameters:
+      - name: artifact_type
+        in: path
+        type: string
+        required: true
+        enum: [drift_report_html, drift_report_json, metadata]
+        description: Type of artifact to download
+      - name: model_id
+        in: path
+        type: string
+        required: false
+        description: Model run_id (defaults to 'latest')
+    produces:
+      - text/html
+      - application/json
+    responses:
+      200:
+        description: File download
+      404:
+        description: Artifact not found
+    """
+    config = get_config()
+    
+    if not config.USE_POSTGRES:
+        return jsonify({"error": "PostgreSQL mode required"}), 400
+    
+    artifact = get_artifact_from_db(model_id, artifact_type)
+    
+    if not artifact or not artifact.get('artifact_data'):
+        abort(404, description=f"Artifact '{artifact_type}' not found")
+    
+    # Determine content type and filename
+    if artifact_type == 'drift_report_html':
+        mimetype = 'text/html'
+        filename = f"evidently_drift_report_{artifact.get('model_id', 'unknown')}.html"
+    else:
+        mimetype = 'application/json'
+        filename = f"{artifact_type}_{artifact.get('model_id', 'unknown')}.json"
+    
+    return Response(
+        artifact['artifact_data'],
+        mimetype=mimetype,
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"',
+            'X-Model-ID': artifact.get('model_id', 'unknown'),
+            'X-Source': 'database'
+        }
+    )

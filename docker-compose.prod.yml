@@ -92,7 +92,7 @@ services:
       - DB_PATH=/app/dataset/home_credit.db
       - FLASK_ENV=production
       - PYTHONPATH=/app:/app/src
-    command: gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 app.wsgi:app
+    command: /bin/bash -c "python /app/scripts/sync_artifacts_to_db.py --prod-models-dir /app/prod_models && gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 app.wsgi:app"
     depends_on:
       postgres:
         condition: service_healthy

@@ -6,11 +6,7 @@
     <title>Credit Scoring - Prêt à dépenser | Simulator</title>
     <meta name="description" content="Simplified credit scoring simulator for end-users">
     
-    <!-- Bootstrap CSS (Restored for original design) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
-    <!-- Modular CSS Architecture (Kept for layout structure) -->
+    <!-- Modular CSS Architecture -->
     <link rel="stylesheet" href="/static/styles/variables.css">
     <link rel="stylesheet" href="/static/styles/base.css">
     <link rel="stylesheet" href="/static/styles/layout.css">
@@ -19,27 +15,189 @@
     <link rel="stylesheet" href="/static/styles/components.css">
     <link rel="stylesheet" href="/static/styles/responsive.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Icons (for tooltips/icons) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Bootstrap JS Bundle for Tooltips -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        /* Overrides to blend Bootstrap with custom CSS */
-        .card {
-            border: none;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        /* Custom overrides for Simulator */
+        .simulator-container {
+            max-width: 1400px; /* Wider for big screens */
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
         }
-        .form-label.small.fw-bold {
+
+        .simulator-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-light);
+        }
+
+        .simulator-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-xl);
+        }
+
+        @media (min-width: 992px) {
+            .simulator-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .form-section {
+            background: var(--bg-secondary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            height: 100%;
+        }
+
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 2px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .form-label {
+            display: block;
             font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+            letter-spacing: 0.05em;
         }
-        .btn-info {
-            color: white !important;
+
+        .form-control {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-sm);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: var(--bg-white);
+            color: var(--text-primary);
         }
-        /* Ensure Bootstrap tooltips work */
-        .tooltip {
-            z-index: 10000;
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-simulate {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .btn-simulate:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-reset {
+            background-color: white;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-medium);
+            padding: 1rem 2rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-reset:hover {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Result Card Styles */
+        .result-card {
+            margin-top: var(--spacing-xl);
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .result-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .metric-box {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: var(--spacing-xs);
+        }
+
+        .decision-value.ACCEPTED { color: var(--success); }
+        .decision-value.REJECTED { color: var(--danger); }
+
+        .tooltip-icon {
+            color: var(--text-muted);
+            margin-left: 4px;
+            cursor: help;
         }
     </style>
 </head>
@@ -83,149 +241,160 @@
 
         <!-- Main Content -->
         <main id="main-content" class="main-content">
-            <div class="container">
-                <div class="card p-4 simulator-card">
-                    <h2 class="text-center mb-3">End-user Simulator</h2>
-                    <p class="text-muted text-center mb-4">Simplified form grouped by thematic for quick testing.</p>
+            <div class="simulator-container">
+                <div class="simulator-card">
+                    <div class="text-center mb-5">
+                        <h1 style="font-size: 2rem; color: var(--primary-dark); margin-bottom: 0.5rem;">
+                            <i class="bi bi-calculator"></i> Credit Eligibility Simulator
+                        </h1>
+                        <p class="text-muted">Fill in your information below to get an instant credit eligibility estimate.</p>
+                    </div>
 
                     <form id="simulatorForm">
-                        <div class="row g-4">
+                        <div class="simulator-grid">
                             <!-- Left Column: Personal & Financial -->
-                            <div class="col-md-6">
-                                <div class="card h-100 p-3 border">
-                                    <h4 class="mb-3 border-bottom pb-2">👤 Personal & Financial</h4>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Age (Years) <i class="bi bi-question-circle text-muted" title="Client's age in years."></i></label>
-                                            <input type="number" step="any" class="form-control" name="AGE_YEARS" value="35">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Gender <i class="bi bi-question-circle text-muted" title="Client's gender."></i></label>
-                                            <select class="form-select" name="CODE_GENDER">
-                                                <option value="F">Female</option>
-                                                <option value="M">Male</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Total Income <i class="bi bi-question-circle text-muted" title="Annual income of the client."></i></label>
-                                            <input type="number" step="any" class="form-control" name="AMT_INCOME_TOTAL" value="150000">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Credit Amount <i class="bi bi-question-circle text-muted" title="Total loan amount requested."></i></label>
-                                            <input type="number" step="any" class="form-control" name="AMT_CREDIT" value="500000">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Annuity Amount <i class="bi bi-question-circle text-muted" title="Monthly loan repayment amount."></i></label>
-                                            <input type="number" step="any" class="form-control" name="AMT_ANNUITY" value="25000">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Goods Price <i class="bi bi-question-circle text-muted" title="Price of the goods for which the loan is given."></i></label>
-                                            <input type="number" step="any" class="form-control" name="AMT_GOODS_PRICE" value="450000">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Education <i class="bi bi-question-circle text-muted" title="Highest level of education achieved."></i></label>
-                                            <select class="form-select" name="NAME_EDUCATION_TYPE">
-                                                <option value="Secondary / secondary special">Secondary</option>
-                                                <option value="Higher education">Higher education</option>
-                                                <option value="Incomplete higher">Incomplete higher</option>
-                                                <option value="Lower secondary">Lower secondary</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Family Status <i class="bi bi-question-circle text-muted" title="Marital status of the client."></i></label>
-                                            <select class="form-select" name="NAME_FAMILY_STATUS">
-                                                <option value="Married">Married</option>
-                                                <option value="Single / not married">Single</option>
-                                                <option value="Civil marriage">Civil marriage</option>
-                                                <option value="Widow">Widow</option>
-                                                <option value="Separated">Separated</option>
-                                            </select>
-                                        </div>
+                            <div class="form-section">
+                                <h4 class="form-section-title">
+                                    <i class="bi bi-person-vcard"></i> Personal & Financial
+                                </h4>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Age (Years) <i class="bi bi-question-circle tooltip-icon" title="Client's age in years."></i></label>
+                                        <input type="number" step="any" class="form-control" name="AGE_YEARS" value="35" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Gender <i class="bi bi-question-circle tooltip-icon" title="Client's gender."></i></label>
+                                        <select class="form-control" name="CODE_GENDER" required>
+                                            <option value="F">Female</option>
+                                            <option value="M">Male</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Total Income (€) <i class="bi bi-question-circle tooltip-icon" title="Annual income of the client."></i></label>
+                                        <input type="number" step="any" class="form-control" name="AMT_INCOME_TOTAL" value="150000" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Credit Amount (€) <i class="bi bi-question-circle tooltip-icon" title="Total loan amount requested."></i></label>
+                                        <input type="number" step="any" class="form-control" name="AMT_CREDIT" value="500000" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Annuity Amount (€) <i class="bi bi-question-circle tooltip-icon" title="Monthly loan repayment amount."></i></label>
+                                        <input type="number" step="any" class="form-control" name="AMT_ANNUITY" value="25000" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Goods Price (€) <i class="bi bi-question-circle tooltip-icon" title="Price of the goods for which the loan is given."></i></label>
+                                        <input type="number" step="any" class="form-control" name="AMT_GOODS_PRICE" value="450000" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Education <i class="bi bi-question-circle tooltip-icon" title="Highest level of education achieved."></i></label>
+                                        <select class="form-control" name="NAME_EDUCATION_TYPE" required>
+                                            <option value="Secondary / secondary special">Secondary</option>
+                                            <option value="Higher education">Higher education</option>
+                                            <option value="Incomplete higher">Incomplete higher</option>
+                                            <option value="Lower secondary">Lower secondary</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Family Status <i class="bi bi-question-circle tooltip-icon" title="Marital status of the client."></i></label>
+                                        <select class="form-control" name="NAME_FAMILY_STATUS" required>
+                                            <option value="Married">Married</option>
+                                            <option value="Single / not married">Single</option>
+                                            <option value="Civil marriage">Civil marriage</option>
+                                            <option value="Widow">Widow</option>
+                                            <option value="Separated">Separated</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Right Column: Employment & External -->
-                            <div class="col-md-6">
-                                <div class="card h-100 p-3 border">
-                                    <h4 class="mb-3 border-bottom pb-2">💼 Employment & Occupation</h4>
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Years Employed <i class="bi bi-question-circle text-muted" title="Number of years the client has been in their current job."></i></label>
-                                            <input type="number" step="any" class="form-control" name="EMPLOYED_YEARS" value="5">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Income Type <i class="bi bi-question-circle text-muted" title="Source of the client's income."></i></label>
-                                            <select class="form-select" name="NAME_INCOME_TYPE">
-                                                <option value="Working">Working</option>
-                                                <option value="Commercial associate">Commercial associate</option>
-                                                <option value="Pensioner">Pensioner</option>
-                                                <option value="State servant">State servant</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label class="form-label small fw-bold">Occupation <i class="bi bi-question-circle text-muted" title="Type of work the client performs."></i></label>
-                                            <select class="form-select" name="OCCUPATION_TYPE">
-                                                <option value="Laborers">Laborers</option>
-                                                <option value="Core staff">Core staff</option>
-                                                <option value="Managers">Managers</option>
-                                                <option value="Drivers">Drivers</option>
-                                                <option value="Sales staff">Sales staff</option>
-                                                <option value="Accountants">Accountants</option>
-                                                <option value="missing">Other / Not specified</option>
-                                            </select>
-                                        </div>
+                            <div class="form-section">
+                                <h4 class="form-section-title">
+                                    <i class="bi bi-briefcase"></i> Employment & Occupation
+                                </h4>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Years Employed <i class="bi bi-question-circle tooltip-icon" title="Number of years the client has been in their current job."></i></label>
+                                        <input type="number" step="any" class="form-control" name="EMPLOYED_YEARS" value="5" required>
                                     </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Income Type <i class="bi bi-question-circle tooltip-icon" title="Source of the client's income."></i></label>
+                                        <select class="form-control" name="NAME_INCOME_TYPE" required>
+                                            <option value="Working">Working</option>
+                                            <option value="Commercial associate">Commercial associate</option>
+                                            <option value="Pensioner">Pensioner</option>
+                                            <option value="State servant">State servant</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label class="form-label">Occupation <i class="bi bi-question-circle tooltip-icon" title="Type of work the client performs."></i></label>
+                                        <select class="form-control" name="OCCUPATION_TYPE" required>
+                                            <option value="Laborers">Laborers</option>
+                                            <option value="Core staff">Core staff</option>
+                                            <option value="Managers">Managers</option>
+                                            <option value="Drivers">Drivers</option>
+                                            <option value="Sales staff">Sales staff</option>
+                                            <option value="Accountants">Accountants</option>
+                                            <option value="missing">Other / Not specified</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                                    <h4 class="mb-3 border-bottom pb-2">🛡️ External Risk Scores</h4>
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <label class="form-label small fw-bold">Ext Source 1 <i class="bi bi-question-circle text-muted" title="Normalized score from external data source 1 (0=Poor, 1=Excellent)."></i></label>
-                                            <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_1" value="0.5">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label small fw-bold">Ext Source 2 <i class="bi bi-question-circle text-muted" title="Normalized score from external data source 2 (0=Poor, 1=Excellent)."></i></label>
-                                            <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_2" value="0.5">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label small fw-bold">Ext Source 3 <i class="bi bi-question-circle text-muted" title="Normalized score from external data source 3 (0=Poor, 1=Excellent)."></i></label>
-                                            <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_3" value="0.5">
-                                        </div>
+                                <h4 class="form-section-title" style="margin-top: var(--spacing-lg);">
+                                    <i class="bi bi-shield-lock"></i> External Risk Scores
+                                </h4>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Ext Source 1 <i class="bi bi-question-circle tooltip-icon" title="Normalized score from external data source 1 (0=Poor, 1=Excellent)."></i></label>
+                                        <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_1" value="0.5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Ext Source 2 <i class="bi bi-question-circle tooltip-icon" title="Normalized score from external data source 2 (0=Poor, 1=Excellent)."></i></label>
+                                        <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_2" value="0.5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Ext Source 3 <i class="bi bi-question-circle tooltip-icon" title="Normalized score from external data source 3 (0=Poor, 1=Excellent)."></i></label>
+                                        <input type="number" step="0.01" class="form-control" name="EXT_SOURCE_3" value="0.5">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-info w-100 fw-bold mt-4 text-white" id="simSubmitBtn">
-                            <span aria-hidden="true">✨</span> RUN END-USER SIMULATION
-                        </button>
+                        <div class="text-center mt-5" style="display: flex; justify-content: center; gap: 1rem;">
+                            <button type="submit" class="btn-simulate" id="simSubmitBtn">
+                                <i class="bi bi-check-circle-fill"></i> Check My Eligibility
+                            </button>
+                            <button type="reset" class="btn-reset" onclick="resetForm()">
+                                Reset
+                            </button>
+                        </div>
                     </form>
                 </div>
 
-                <!-- Result Card (appears below after submit) -->
-                <div id="resultCard" class="card p-5 result-card mt-4" style="display: none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">Analysis for Client #<span id="res_client_id"></span></h3>
-                        <span class="badge bg-secondary">Model: CreditScoring_BestModel</span>
+                <!-- Result Card -->
+                <div id="resultCard" class="simulator-card result-card">
+                    <div class="result-header">
+                        <h3 style="margin: 0;">Analysis for Client #<span id="res_client_id"></span></h3>
+                        <span class="badge bg-secondary" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Model: CreditScoring_BestModel</span>
                     </div>
-                    <hr>
-                    <div class="row text-center my-4">
-                        <div class="col-md-6 border-end">
-                            <p class="text-muted mb-1">Probability of Default</p>
-                            <h2 id="res_prob" class="prob-value"></h2>
+                    
+                    <div class="result-metrics">
+                        <div class="metric-box">
+                            <div class="metric-value" id="res_prob">--</div>
+                            <div class="metric-label">Probability of Default</div>
                         </div>
-                        <div class="col-md-6">
-                            <p class="text-muted mb-1">Final Decision</p>
-                            <h2 id="res_decision" class="decision-value"></h2>
+                        <div class="metric-box">
+                            <div class="metric-value decision-value" id="res_decision">--</div>
+                            <div class="metric-label">Final Decision</div>
                         </div>
                     </div>
 
-                    <div class="alert alert-light border text-center mb-4">
+                    <div class="alert alert-light border text-center mb-4" style="background: var(--info-bg); color: var(--info); border-color: var(--info) !important;">
                         Business Optimized Threshold: <strong><span id="res_threshold"></span></strong>
                     </div>
 
                     <div class="mt-4">
-                        <h4 class="mb-3"><i class="bi bi-info-circle"></i> Decision Transparency (SHAP)</h4>
+                        <h4 class="mb-3" style="font-size: 1.1rem; color: var(--text-primary);"><i class="bi bi-info-circle"></i> Decision Transparency (SHAP)</h4>
                         <p class="text-muted small">This chart shows which features pushed the score towards rejection (red) or acceptance (blue).</p>
                         <div id="shapPlot" class="border rounded p-2 bg-white"></div>
                     </div>
@@ -254,12 +423,16 @@
             document.querySelector('.nav-links').classList.toggle('active');
         }
 
+        function resetForm() {
+            document.getElementById('resultCard').style.display = 'none';
+        }
+
         function displayResults(data) {
             const resultCard = document.getElementById('resultCard');
             
             // Handle nested metadata if present (API update)
-            const modelName = data.metadata ? data.metadata.model_name : (data.model_name || 'Unknown Model');
-            const threshold = data.metadata ? data.metadata.threshold : (data.threshold || 0.5);
+            const modelName = data.metadata && data.metadata.model_name ? data.metadata.model_name : (data.model_name || '--');
+            const threshold = data.metadata && data.metadata.threshold !== undefined ? data.metadata.threshold : (data.threshold !== undefined ? data.threshold : '--');
             
             document.getElementById('res_client_id').innerText = data.client_id;
             document.getElementById('res_prob').innerText = (data.probability * 100).toFixed(1) + '%';
@@ -267,13 +440,7 @@
             // Decision
             const decisionEl = document.getElementById('res_decision');
             decisionEl.innerText = data.decision;
-            
-            // Apply color classes based on decision
-            if (data.decision === 'ACCEPTED') {
-                decisionEl.style.color = '#198754'; // Success green
-            } else {
-                decisionEl.style.color = '#dc3545'; // Danger red
-            }
+            decisionEl.className = 'metric-value decision-value ' + data.decision;
 
             document.getElementById('res_threshold').innerText = threshold;
 
@@ -296,6 +463,8 @@
         document.getElementById('simulatorForm').onsubmit = async (e) => {
             e.preventDefault();
             const submitBtn = document.getElementById('simSubmitBtn');
+            const originalBtnContent = submitBtn.innerHTML;
+            
             const formData = new FormData(e.target);
             const rawFeatures = {};
             formData.forEach((value, key) => {
@@ -325,7 +494,7 @@
             delete features.EMPLOYED_YEARS;
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> SIMULATING...';
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyzing...';
 
             try {
                 const response = await fetch('/predict', {
@@ -343,7 +512,7 @@
                 alert("Simulation failed: " + err);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span aria-hidden="true">✨</span> RUN END-USER SIMULATION';
+                submitBtn.innerHTML = originalBtnContent;
             }
         };
     </script>
