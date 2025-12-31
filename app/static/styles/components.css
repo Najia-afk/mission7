@@ -489,3 +489,44 @@ textarea.form-control {
 .animate-pulse {
     animation: pulse 2s ease-in-out infinite;
 }
+
+/* =========================
+   PAGE BANNER
+   Hero-style header for page titles
+========================= */
+.page-banner {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    color: white;
+    padding: 2.5rem 0;
+    margin-bottom: 2rem;
+}
+
+.page-banner .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-banner h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-banner p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.85;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.page-banner .banner-icon {
+    width: 40px;
+    height: 40px;
+    opacity: 0.9;
+}
+
