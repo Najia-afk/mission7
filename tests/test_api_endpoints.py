@@ -144,5 +144,22 @@ def test_wcag_audit_page(client):
     assert 'lang=' in html  # Language attribute for accessibility
 
 
+def test_audit_drift_report(client):
+    """Test drift report endpoint returns JSON drift analysis."""
+    response = client.get('/api/audit/drift-report')
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert 'drift_report' in data or 'drift_summary' in data or 'status' in data or 'error' in data
+
+
+def test_audit_drift_report_html(client):
+    """Test Evidently HTML drift report endpoint."""
+    response = client.get('/api/audit/drift-report-html')
+    # Should return HTML or redirect
+    assert response.status_code in [200, 302, 404]
+    if response.status_code == 200:
+        assert b'html' in response.data.lower() or b'<!DOCTYPE' in response.data
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

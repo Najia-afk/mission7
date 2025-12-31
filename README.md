@@ -39,7 +39,8 @@ mission7/
 │   ├── threshold.json     # Optimal threshold
 │   ├── metadata.json      # Model metrics & info
 │   ├── feature_names.txt  # 125 features list
-│   └── drift_report.html  # Evidently drift report
+│   ├── evidently_data_drift_report.html  # Evidently drift report
+│   └── evidently_data_drift_report.json  # Drift report (JSON)
 │
 ├── dataset/                # 💾 DATA FILES
 │   └── home_credit.db     # SQLite database
