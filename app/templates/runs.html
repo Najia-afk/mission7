@@ -137,12 +137,14 @@
                 const response = await fetch('/api/models/current');
                 const data = await response.json();
                 
-                document.getElementById('currentModelName').textContent = data.model_name || 'Unknown';
-                document.getElementById('currentModelVersion').textContent = data.version || '-';
-                document.getElementById('currentModelAUC').textContent = data.metrics?.auc_roc ? 
-                    (data.metrics.auc_roc * 100).toFixed(2) + '%' : '-';
-                document.getElementById('currentModelThreshold').textContent = data.metrics?.threshold ? 
-                    data.metrics.threshold.toFixed(3) : '-';
+                // Data is in metadata object
+                const meta = data.metadata || {};
+                document.getElementById('currentModelName').textContent = meta.model_name || data.model_name || 'File Model';
+                document.getElementById('currentModelVersion').textContent = meta.model_version || data.version || '-';
+                document.getElementById('currentModelAUC').textContent = meta.metrics?.auc_roc ? 
+                    (meta.metrics.auc_roc * 100).toFixed(2) + '%' : '-';
+                document.getElementById('currentModelThreshold').textContent = data.threshold ? 
+                    data.threshold.toFixed(2) : (meta.optimal_threshold ? meta.optimal_threshold.toFixed(2) : '-');
                     
             } catch (err) {
                 console.error('Failed to load current model:', err);
@@ -164,33 +166,24 @@
                 
                 status.innerHTML = '';
                 
-                // File-based model
-                if (data.file_model) {
-                    const card = createModelCard({
-                        name: data.file_model.name || 'File Model',
-                        source: 'file',
-                        version: data.file_model.version || '-',
-                        metrics: data.file_model.metrics || {},
-                        isDeployed: data.file_model.is_current
-                    });
-                    grid.appendChild(card);
-                }
+                // Handle new API structure with 'models' array
+                const models = data.models || [];
                 
-                // MLflow models
-                if (data.mlflow_models && data.mlflow_models.length > 0) {
-                    data.mlflow_models.forEach(model => {
+                if (models.length > 0) {
+                    models.forEach(model => {
+                        const meta = model.metadata || {};
                         const card = createModelCard({
-                            name: model.name,
-                            source: 'mlflow',
-                            version: model.version,
-                            runId: model.run_id,
-                            metrics: model.metrics || {},
-                            created: model.creation_timestamp,
-                            isDeployed: model.is_current
+                            name: meta.model_name || model.name || 'Model',
+                            source: model.source || 'file',
+                            version: meta.model_version || model.version || '-',
+                            runId: model.run_id || meta.run_id,
+                            metrics: meta.metrics || {},
+                            stage: model.stage,
+                            isDeployed: model.active
                         });
                         grid.appendChild(card);
                     });
-                } else if (!data.file_model) {
+                } else {
                     status.innerHTML = '<div class="alert alert-warning">No models found. Train a model first.</div>';
                 }
                 

@@ -343,25 +343,32 @@
                 const response = await fetch('/api/model/info');
                 const data = await response.json();
                 
-                if (response.ok && data.model_name) {
-                    updateStatus('model', 'healthy', data.model_name);
+                // Data is in metadata object
+                const meta = data.metadata || {};
+                const modelName = meta.model_name || 'File Model';
+                const modelVersion = meta.model_version || '-';
+                const aucRoc = meta.metrics?.auc_roc;
+                const threshold = data.threshold || meta.optimal_threshold;
+                
+                if (response.ok && data.model_loaded) {
+                    updateStatus('model', 'healthy', modelName);
                     
                     document.getElementById('modelDetails').innerHTML = `
                         <div class="grid grid-2 gap-sm">
                             <div class="metric-box">
-                                <div class="metric-value" style="font-size: 1rem;">${data.model_name}</div>
+                                <div class="metric-value" style="font-size: 1rem;">${modelName}</div>
                                 <div class="metric-label">Model</div>
                             </div>
                             <div class="metric-box">
-                                <div class="metric-value">v${data.version || '?'}</div>
+                                <div class="metric-value">v${modelVersion}</div>
                                 <div class="metric-label">Version</div>
                             </div>
                             <div class="metric-box">
-                                <div class="metric-value">${data.auc_roc ? (data.auc_roc * 100).toFixed(1) + '%' : '-'}</div>
+                                <div class="metric-value">${aucRoc ? (aucRoc * 100).toFixed(1) + '%' : '-'}</div>
                                 <div class="metric-label">AUC-ROC</div>
                             </div>
                             <div class="metric-box">
-                                <div class="metric-value">${data.threshold || '-'}</div>
+                                <div class="metric-value">${threshold ? threshold.toFixed(2) : '-'}</div>
                                 <div class="metric-label">Threshold</div>
                             </div>
                         </div>

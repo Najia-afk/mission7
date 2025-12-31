@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="/static/styles/footer.css">
     <link rel="stylesheet" href="/static/styles/components.css">
     <link rel="stylesheet" href="/static/styles/responsive.css">
-    <link rel="stylesheet" href="/static/styles/pages/predict.css">
     
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
@@ -59,37 +58,41 @@
         <!-- Main Content -->
         <main id="main-content" class="main-content">
             <div class="container">
-                <div class="section">
-                    <h1>Credit Scoring Simulator</h1>
-                    <p>Enter your information to get an instant credit eligibility estimate. This simulator uses the same AI model as our loan officers.</p>
-                </div>
-
-                <div class="grid grid-2 gap-xl">
-                    <!-- Form Column -->
-                    <div>
+                <!-- Compact Single Card Form -->
+                <div class="card simulator-card">
+                    <div class="card-header">
+                        <h1 class="card-title" style="font-size: 1.5rem; margin: 0;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            Credit Eligibility Simulator
+                        </h1>
+                        <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                            Fill in your information below to get an instant credit eligibility estimate
+                        </p>
+                    </div>
+                    
+                    <div class="card-body">
                         <form id="simulatorForm">
-                            <!-- Personal Information -->
-                            <div class="card mb-lg">
-                                <div class="card-header">
-                                    <h3 class="card-title">Personal Information</h3>
-                                </div>
-                                <div class="card-body">
+                            <!-- Row 1: Personal Info -->
+                            <div class="form-section">
+                                <h4 class="form-section-title">👤 Personal Information</h4>
+                                <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">Gender</label>
-                                        <select name="CODE_GENDER" class="form-control" required>
+                                        <select name="CODE_GENDER" class="form-control form-control-sm" required>
                                             <option value="">Select...</option>
                                             <option value="M">Male</option>
                                             <option value="F">Female</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Age (years)</label>
-                                        <input type="number" name="AGE_YEARS" class="form-control" min="18" max="100" required>
-                                        <p class="form-text">Minimum age: 18 years</p>
+                                        <label class="form-label">Age</label>
+                                        <input type="number" name="AGE_YEARS" class="form-control form-control-sm" min="18" max="100" placeholder="Years" required>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Family Status</label>
-                                        <select name="NAME_FAMILY_STATUS" class="form-control" required>
+                                        <select name="NAME_FAMILY_STATUS" class="form-control form-control-sm" required>
                                             <option value="">Select...</option>
                                             <option value="Single / not married">Single</option>
                                             <option value="Married">Married</option>
@@ -99,16 +102,16 @@
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Number of Children</label>
-                                        <input type="number" name="CNT_CHILDREN" class="form-control" min="0" max="20" value="0" required>
+                                        <label class="form-label">Children</label>
+                                        <input type="number" name="CNT_CHILDREN" class="form-control form-control-sm" min="0" max="20" value="0" required>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Number of Family Members</label>
-                                        <input type="number" name="CNT_FAM_MEMBERS" class="form-control" min="1" max="20" value="1" required>
+                                        <label class="form-label">Family Members</label>
+                                        <input type="number" name="CNT_FAM_MEMBERS" class="form-control form-control-sm" min="1" max="20" value="1" required>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Education Level</label>
-                                        <select name="NAME_EDUCATION_TYPE" class="form-control" required>
+                                        <label class="form-label">Education</label>
+                                        <select name="NAME_EDUCATION_TYPE" class="form-control form-control-sm" required>
                                             <option value="">Select...</option>
                                             <option value="Lower secondary">Lower Secondary</option>
                                             <option value="Secondary / secondary special">Secondary</option>
@@ -120,18 +123,16 @@
                                 </div>
                             </div>
 
-                            <!-- Employment & Income -->
-                            <div class="card mb-lg">
-                                <div class="card-header">
-                                    <h3 class="card-title">Employment & Income</h3>
-                                </div>
-                                <div class="card-body">
+                            <!-- Row 2: Employment & Income -->
+                            <div class="form-section">
+                                <h4 class="form-section-title">💼 Employment & Income</h4>
+                                <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">Income Type</label>
-                                        <select name="NAME_INCOME_TYPE" class="form-control" required>
+                                        <select name="NAME_INCOME_TYPE" class="form-control form-control-sm" required>
                                             <option value="">Select...</option>
-                                            <option value="Working">Working (Employee)</option>
-                                            <option value="Commercial associate">Commercial Associate</option>
+                                            <option value="Working">Employee</option>
+                                            <option value="Commercial associate">Commercial</option>
                                             <option value="State servant">State Servant</option>
                                             <option value="Pensioner">Pensioner</option>
                                             <option value="Student">Student</option>
@@ -139,19 +140,17 @@
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Annual Income (€)</label>
-                                        <input type="number" name="AMT_INCOME_TOTAL" class="form-control" min="0" step="1000" required>
-                                        <p class="form-text">Your total annual income before taxes</p>
+                                        <input type="number" name="AMT_INCOME_TOTAL" class="form-control form-control-sm" min="0" step="1000" placeholder="e.g. 45000" required>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Employment Duration (years)</label>
-                                        <input type="number" name="YEARS_EMPLOYED" class="form-control" min="0" max="50" step="0.5" required>
-                                        <p class="form-text">Years at current employer</p>
+                                        <label class="form-label">Years Employed</label>
+                                        <input type="number" name="YEARS_EMPLOYED" class="form-control form-control-sm" min="0" max="50" step="0.5" placeholder="Years" required>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Organization Type</label>
-                                        <select name="ORGANIZATION_TYPE" class="form-control" required>
+                                        <label class="form-label">Organization</label>
+                                        <select name="ORGANIZATION_TYPE" class="form-control form-control-sm" required>
                                             <option value="">Select...</option>
-                                            <option value="Business Entity Type 3">Business Entity</option>
+                                            <option value="Business Entity Type 3">Business</option>
                                             <option value="Government">Government</option>
                                             <option value="School">Education</option>
                                             <option value="Medicine">Healthcare</option>
@@ -162,106 +161,78 @@
                                 </div>
                             </div>
 
-                            <!-- Loan Details -->
-                            <div class="card mb-lg">
-                                <div class="card-header">
-                                    <h3 class="card-title">Loan Request</h3>
-                                </div>
-                                <div class="card-body">
+                            <!-- Row 3: Loan Request -->
+                            <div class="form-section">
+                                <h4 class="form-section-title">🏦 Loan Request</h4>
+                                <div class="form-grid">
                                     <div class="form-group">
-                                        <label class="form-label">Loan Amount Requested (€)</label>
-                                        <input type="number" name="AMT_CREDIT" class="form-control" min="1000" step="1000" required>
+                                        <label class="form-label">Loan Amount (€)</label>
+                                        <input type="number" name="AMT_CREDIT" class="form-control form-control-sm" min="1000" step="1000" placeholder="e.g. 150000" required>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Monthly Payment (€)</label>
-                                        <input type="number" name="AMT_ANNUITY" class="form-control" min="50" step="50" required>
-                                        <p class="form-text">Desired monthly repayment amount</p>
+                                        <input type="number" name="AMT_ANNUITY" class="form-control form-control-sm" min="50" step="50" placeholder="e.g. 500" required>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Contract Type</label>
-                                        <select name="NAME_CONTRACT_TYPE" class="form-control" required>
+                                        <label class="form-label">Loan Type</label>
+                                        <select name="NAME_CONTRACT_TYPE" class="form-control form-control-sm" required>
                                             <option value="">Select...</option>
                                             <option value="Cash loans">Cash Loan</option>
                                             <option value="Revolving loans">Revolving Credit</option>
                                         </select>
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- External Scores -->
-                            <div class="card mb-lg">
-                                <div class="card-header">
-                                    <h3 class="card-title">External Scores (Optional)</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-info mb-md">
-                                        These scores are typically obtained from credit bureaus. Leave blank if unknown.
-                                    </div>
-                                    <div class="grid grid-3 gap-md">
-                                        <div class="form-group">
-                                            <label class="form-label">EXT_SOURCE_1</label>
-                                            <input type="number" name="EXT_SOURCE_1" class="form-control" min="0" max="1" step="0.01" placeholder="0-1">
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="form-label">EXT_SOURCE_2</label>
-                                            <input type="number" name="EXT_SOURCE_2" class="form-control" min="0" max="1" step="0.01" placeholder="0-1">
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="form-label">EXT_SOURCE_3</label>
-                                            <input type="number" name="EXT_SOURCE_3" class="form-control" min="0" max="1" step="0.01" placeholder="0-1">
-                                        </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Credit Score (0-1)</label>
+                                        <input type="number" name="EXT_SOURCE_2" class="form-control form-control-sm" min="0" max="1" step="0.01" placeholder="Optional">
                                     </div>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-lg w-full" id="simulateBtn">
-                                Check My Eligibility
-                            </button>
+                            <!-- Submit Button -->
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-lg" id="simulateBtn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                    Check My Eligibility
+                                </button>
+                                <button type="reset" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                            </div>
                         </form>
                     </div>
+                </div>
 
-                    <!-- Results Column -->
-                    <div>
-                        <div id="resultCard" class="card result-card hidden sticky-result animate-fade-in" role="region" aria-live="polite">
-                            <div class="card-header">
-                                <h3 class="card-title">Your Simulation Result</h3>
+                <!-- Result Card (appears below after submit) -->
+                <div id="resultCard" class="card result-card hidden mt-lg" role="region" aria-live="polite">
+                    <div class="card-body">
+                        <div class="result-grid">
+                            <!-- Decision -->
+                            <div id="resultDecision" class="result-decision">
+                                <!-- APPROVED or REJECTED -->
                             </div>
-                            <div class="card-body text-center">
-                                <div id="resultDecision" class="result-decision-large mb-lg">
-                                    <!-- APPROVED or REJECTED -->
+                            
+                            <!-- Metrics -->
+                            <div class="result-metrics">
+                                <div class="metric-item">
+                                    <span class="metric-label">Risk Score</span>
+                                    <span id="resultProb" class="metric-value">--</span>
                                 </div>
-                                
-                                <div class="result-gauge mb-lg">
-                                    <div class="gauge-label">Risk Score</div>
-                                    <div id="resultProb" class="gauge-value">--</div>
-                                    <p class="form-text">Lower is better (probability of default)</p>
+                                <div class="metric-item">
+                                    <span class="metric-label">Threshold</span>
+                                    <span id="resultThreshold" class="metric-value">--</span>
                                 </div>
-
-                                <div class="alert alert-info mb-lg">
-                                    <strong>Business Threshold:</strong> <span id="resultThreshold">--</span>
-                                </div>
-
-                                <div class="result-explanation mb-lg text-left">
-                                    <h4>Key Factors</h4>
-                                    <p class="form-text">Features that most influenced this decision:</p>
-                                    <div id="shapPlot" class="shap-container"></div>
-                                </div>
-
-                                <div class="alert alert-warning">
-                                    <strong>Disclaimer:</strong> This is a simulation only. Final decisions are made by our credit analysts based on a complete review of your application.
-                                </div>
+                            </div>
+                            
+                            <!-- SHAP Explanation -->
+                            <div class="result-explanation">
+                                <h4>Key Decision Factors</h4>
+                                <div id="shapPlot" class="shap-container"></div>
                             </div>
                         </div>
-
-                        <!-- Placeholder when no result -->
-                        <div id="resultPlaceholder" class="card">
-                            <div class="card-body text-center p-xl">
-                                <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 80px; height: 80px; margin: 0 auto 1rem; opacity: 0.3;">
-                                    <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <h3 class="mb-sm">Ready to Simulate</h3>
-                                <p class="text-muted">Fill in the form and click "Check My Eligibility" to see your instant credit score simulation.</p>
-                            </div>
+                        
+                        <div class="alert alert-warning mt-md" style="font-size: 0.875rem;">
+                            <strong>⚠️ Disclaimer:</strong> This is a simulation only. Final decisions are made by credit analysts.
                         </div>
                     </div>
                 </div>
@@ -289,7 +260,6 @@
             const formData = new FormData(e.target);
             const features = {};
             
-            // Process form data and convert to expected feature format
             formData.forEach((value, key) => {
                 if (value === '') {
                     features[key] = null;
@@ -299,10 +269,9 @@
                     features[key] = value;
                 }
             });
-            
-            // Convert simulator fields to model features
+
+            // Convert to model features
             const modelFeatures = {
-                // Direct mappings
                 CODE_GENDER: features.CODE_GENDER,
                 NAME_FAMILY_STATUS: features.NAME_FAMILY_STATUS,
                 CNT_CHILDREN: features.CNT_CHILDREN,
@@ -314,21 +283,13 @@
                 AMT_CREDIT: features.AMT_CREDIT,
                 AMT_ANNUITY: features.AMT_ANNUITY,
                 NAME_CONTRACT_TYPE: features.NAME_CONTRACT_TYPE,
-                EXT_SOURCE_1: features.EXT_SOURCE_1,
                 EXT_SOURCE_2: features.EXT_SOURCE_2,
-                EXT_SOURCE_3: features.EXT_SOURCE_3,
-                
-                // Calculated fields (convert years to days as used in model)
                 DAYS_BIRTH: features.AGE_YEARS ? -features.AGE_YEARS * 365 : null,
                 DAYS_EMPLOYED: features.YEARS_EMPLOYED ? -features.YEARS_EMPLOYED * 365 : null,
-                
-                // Derived features
-                CREDIT_INCOME_PERCENT: features.AMT_CREDIT && features.AMT_INCOME_TOTAL ? 
+                CREDIT_INCOME_PERCENT: features.AMT_CREDIT && features.AMT_INCOME_TOTAL ?
                     features.AMT_CREDIT / features.AMT_INCOME_TOTAL : null,
-                ANNUITY_INCOME_PERCENT: features.AMT_ANNUITY && features.AMT_INCOME_TOTAL ? 
+                ANNUITY_INCOME_PERCENT: features.AMT_ANNUITY && features.AMT_INCOME_TOTAL ?
                     features.AMT_ANNUITY / features.AMT_INCOME_TOTAL : null,
-                CREDIT_TERM: features.AMT_CREDIT && features.AMT_ANNUITY ? 
-                    features.AMT_CREDIT / features.AMT_ANNUITY : null,
             };
 
             try {
@@ -340,9 +301,9 @@
                         features: modelFeatures
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.error) {
                     alert("Error: " + data.error);
                 } else {
@@ -352,41 +313,47 @@
                 alert("Simulation failed: " + err);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = 'Check My Eligibility';
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg> Check My Eligibility`;
             }
         };
 
         function displayResults(data) {
-            document.getElementById('resultPlaceholder').classList.add('hidden');
             const resultCard = document.getElementById('resultCard');
             
             // Decision
             const decisionEl = document.getElementById('resultDecision');
             if (data.decision === 'ACCEPTED') {
-                decisionEl.innerHTML = '<span class="decision-approved-large">✓ ELIGIBLE</span>';
-                decisionEl.className = 'result-decision-large approved';
+                decisionEl.innerHTML = '<div class="decision-badge approved">✓ ELIGIBLE</div>';
+                decisionEl.className = 'result-decision approved';
             } else {
-                decisionEl.innerHTML = '<span class="decision-rejected-large">✗ NOT ELIGIBLE</span>';
-                decisionEl.className = 'result-decision-large rejected';
+                decisionEl.innerHTML = '<div class="decision-badge rejected">✗ NOT ELIGIBLE</div>';
+                decisionEl.className = 'result-decision rejected';
             }
-            
-            // Probability
+
+            // Metrics
             document.getElementById('resultProb').innerText = (data.probability * 100).toFixed(1) + '%';
             document.getElementById('resultThreshold').innerText = (data.threshold * 100).toFixed(1) + '%';
+
+            // SHAP
+            document.getElementById('shapPlot').innerHTML = data.shap_html || '<p class="text-muted">No explainability data</p>';
             
-            // SHAP Plot
-            document.getElementById('shapPlot').innerHTML = data.shap_html || '<p class="text-muted">No explainability data available</p>';
-            
-            // Execute any scripts in SHAP HTML
+            // Execute scripts in SHAP HTML
             const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
             for (let script of scripts) {
                 const newScript = document.createElement("script");
                 newScript.text = script.innerHTML;
                 document.body.appendChild(newScript).parentNode.removeChild(newScript);
             }
-            
+
             resultCard.classList.remove('hidden');
             resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function resetForm() {
+            document.getElementById('resultCard').classList.add('hidden');
         }
 
         function toggleMobileMenu() {
@@ -395,55 +362,160 @@
     </script>
 
     <style>
-        /* Additional simulator-specific styles */
-        .sticky-result {
-            position: sticky;
-            top: 100px;
+        /* Compact Simulator Styles */
+        .simulator-card {
+            max-width: 900px;
+            margin: 0 auto;
         }
-        
-        .result-decision-large {
-            padding: var(--space-lg);
+
+        .form-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
-        
-        .decision-approved-large {
-            font-size: 2rem;
+
+        .form-section:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .form-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 1rem 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Result Card */
+        .result-card {
+            max-width: 900px;
+            margin: 2rem auto 0;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: auto 1fr 2fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-decision {
+            text-align: center;
+        }
+
+        .decision-badge {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-lg);
+            font-size: 1.25rem;
             font-weight: 700;
+        }
+
+        .decision-badge.approved,
+        .result-decision.approved .decision-badge {
+            background: rgba(34, 197, 94, 0.15);
             color: var(--success);
         }
-        
-        .decision-rejected-large {
-            font-size: 2rem;
-            font-weight: 700;
+
+        .decision-badge.rejected,
+        .result-decision.rejected .decision-badge {
+            background: rgba(239, 68, 68, 0.15);
             color: var(--danger);
         }
-        
-        .result-gauge {
-            padding: var(--space-lg);
+
+        .result-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .metric-item {
             background: var(--bg-tertiary);
-            border-radius: var(--radius-lg);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            text-align: center;
         }
-        
-        .gauge-label {
-            font-size: 0.875rem;
+
+        .metric-item .metric-label {
+            display: block;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            margin-bottom: var(--space-xs);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
         }
-        
-        .gauge-value {
-            font-size: 3rem;
+
+        .metric-item .metric-value {
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--text-primary);
         }
-        
-        .placeholder-icon {
+
+        .result-explanation h4 {
+            font-size: 0.875rem;
             color: var(--text-muted);
+            margin: 0 0 0.5rem 0;
         }
-        
-        @media (max-width: 768px) {
-            .sticky-result {
-                position: relative;
-                top: 0;
-            }
+
+        .shap-container {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            min-height: 150px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </body>
