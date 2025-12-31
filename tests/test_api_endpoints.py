@@ -7,16 +7,17 @@ import os
 import pytest
 import json
 
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+# Add app to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import the Flask app
-from api.app import app
+# Import the Flask app from NEW modular structure
+from app.main import create_app
 
 
 @pytest.fixture
 def client():
     """Create a test client for the Flask app."""
+    app = create_app()
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client

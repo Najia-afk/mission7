@@ -1,0 +1,279 @@
+/**
+ * Predict Pages Specific Styles
+ * For: predict.html, predict_test.html, simulator.html
+ */
+
+/* Form Fields Container */
+.form-fields-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: var(--space-sm);
+}
+
+.form-fields-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.form-fields-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+/* Result Card */
+.result-card {
+    border-left: 4px solid var(--primary);
+}
+
+.result-card.approved {
+    border-left-color: var(--success);
+}
+
+.result-card.rejected {
+    border-left-color: var(--danger);
+}
+
+/* Result Metrics */
+.result-metric {
+    padding: var(--space-xl);
+}
+
+.result-metric .metric-value {
+    font-size: 2.5rem;
+}
+
+/* Decision Styling */
+.decision-approved {
+    color: var(--success) !important;
+}
+
+.decision-rejected {
+    color: var(--danger) !important;
+}
+
+/* SHAP Container */
+.shap-container {
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    min-height: 200px;
+    margin-top: var(--space-md);
+}
+
+.shap-container iframe,
+.shap-container img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Model Stats */
+.model-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+}
+
+.model-stat {
+    text-align: center;
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.model-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.model-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Client Info Badge */
+.client-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
+.client-badge-id {
+    color: var(--primary);
+}
+
+/* Feature Groups */
+.feature-group {
+    margin-bottom: var(--space-lg);
+}
+
+.feature-group-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Probability Gauge Visual */
+.probability-gauge {
+    position: relative;
+    height: 20px;
+    background: linear-gradient(to right, var(--success), var(--warning), var(--danger));
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin: var(--space-md) 0;
+}
+
+.probability-marker {
+    position: absolute;
+    top: -5px;
+    width: 4px;
+    height: 30px;
+    background: var(--bg-primary);
+    border: 2px solid var(--text-primary);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.5s ease;
+}
+
+.threshold-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 20px;
+    background: var(--text-primary);
+    opacity: 0.5;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.quick-action-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.quick-action-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Loading State for Results */
+.result-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl);
+    gap: var(--space-md);
+}
+
+.result-loading .spinner {
+    width: 48px;
+    height: 48px;
+}
+
+/* Comparison Mode (for What-if) */
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+}
+
+.comparison-card {
+    position: relative;
+}
+
+.comparison-label {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    font-size: 0.75rem;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+.comparison-label.original {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.comparison-label.modified {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+/* Delta Indicators */
+.delta {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.delta.positive {
+    color: var(--success);
+}
+
+.delta.positive::before {
+    content: '↑ ';
+}
+
+.delta.negative {
+    color: var(--danger);
+}
+
+.delta.negative::before {
+    content: '↓ ';
+}
+
+.delta.neutral {
+    color: var(--text-muted);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .result-metric .metric-value {
+        font-size: 1.75rem;
+    }
+    
+    .comparison-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-fields-container {
+        max-height: none;
+    }
+}
+
+/* Print styles for predict pages */
+@media print {
+    .result-card {
+        break-inside: avoid;
+        border: 1px solid #000;
+    }
+    
+    .shap-container {
+        max-height: none;
+        overflow: visible;
+    }
+}

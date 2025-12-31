@@ -1,0 +1,47 @@
+# Dockerfile.prod
+# Production Docker image for Mission7 Credit Scoring API
+# Uses the new modular app/ structure
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+# Production code (new modular structure)
+COPY app/ ./app/
+
+# Exploration/training code (for feature engineering reuse)
+COPY src/ ./src/
+
+# Production models
+COPY prod_models/ ./prod_models/
+
+# Tests
+COPY tests/ ./tests/
+
+# Set environment variables
+ENV PYTHONPATH=/app:/app/src
+ENV MLFLOW_TRACKING_URI=http://mlflow:5005
+ENV PYTHONUNBUFFERED=1
+ENV USE_POSTGRES=true
+
+# Expose API port
+EXPOSE 5001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5001/api/health || exit 1
+
+# Run with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "2", "--timeout", "120", "app.wsgi:app"]

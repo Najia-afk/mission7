@@ -1,121 +1,260 @@
-﻿# Project: Credit Scoring Model Implementation
-## Scoring System for "Prêt à dépenser" - End-to-End MLOps Approach
+﻿# Mission7 - Credit Scoring MLOps Platform
 
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-24.0+-blue.svg)](https://www.docker.com/)
-[![MLflow](https://img.shields.io/badge/MLflow-2.0+-uppercase.svg)](https://mlflow.org/)
-[![Python](https://img.shields.io/badge/Python-3.10+-yellow.svg)](https://www.python.org/)
+[![MLflow](https://img.shields.io/badge/MLflow-2.0+-purple.svg)](https://mlflow.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com/)
+[![Tests](https://img.shields.io/badge/Tests-16%20passed-brightgreen.svg)]()
 
-###  Project Context
-This project was developed as part of a Data Scientist training program. The mission involves working for "Prêt à dépenser," a financial company that offers consumer loans to individuals with little to no credit history.
-
-The objective is to develop a **classification algorithm** to predict the probability of a client defaulting on a loan, while integrating a complete **MLOps** workflow to manage the model's lifecycle.
-
-###  Business & Technical Objectives
-- **Business Cost Optimization**: Implementation of an asymmetric cost function where a **False Negative (Default)** is **10 times more expensive** than a False Positive (Missed Opportunity).
-- **Transparency (XAI)**: Global and local feature importance analysis via **SHAP** to explain model decisions.
-- **Industrialization (MLOps)**:
-    - Experiment tracking and model registry with **MLflow**.
-    - **Data Drift** analysis using the **Evidently** library.
-    - Continuous Integration and Deployment (CI/CD) via **GitHub Actions**.
-    - Unit testing with **Pytest**.
-
-###  Technical Architecture
-The project is built on a modular and containerized architecture:
-
-1.  **Preprocessing Pipeline**: Class imbalance management and optimized imputation (SimpleImputer + Missing Indicators).
-2.  **Advanced Modeling**: Utilization of **LightGBM** with hyperparameter optimization via HalvingGridSearchCV.
-3.  **Zero-Leakage Architecture**: Strict data separation (Train/Val/Test) before any processing to ensure result integrity.
-4.  **Champion vs Challenger**: Automated comparison against the current production model to ensure business cost reduction before registration.
-5.  **Observability**: Statistical monitoring of feature distributions to detect production drift.
+Production-grade credit scoring API with full MLOps pipeline, SHAP explainability, and regulatory audit trail.
 
 ---
 
-###  Quick Start (Docker)
+## 📁 Project Structure
 
-The entire environment (Jupyter + MLflow) is orchestrated via Docker Compose.
-
-#### 1. Prerequisites
-- Docker Desktop
-- Docker Compose V2
-
-#### 2. Launch the System
-`ash
-docker-compose up --build
-`
-
-#### 3. Access the Services (Development - Unique Ports)
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Jupyter Notebook** | [http://localhost:8870](http://localhost:8870) | Open `mission7.ipynb` |
-| **MLflow UI (Dev)** | [http://localhost:5075](http://localhost:5075) | Track runs and registered models |
-| **API** | [http://localhost:8070](http://localhost:8070) | REST API for predictions |
-| **Dashboard (nginx)** | [http://localhost:8071](http://localhost:8071) | Web interface |
-| **Postgres** | `localhost:5470` | Database (dev mode uses SQLite) |
-
----
-
-### 🚀 Production Deployment
-
-#### Option 1: Docker Compose (Recommended)
-```bash
-docker-compose -f docker-compose.prod.yml up -d
+```
+mission7/
+├── app/                    # 🚀 PRODUCTION API
+│   ├── api/               # Flask routes & services
+│   │   ├── routes.py      # Main API endpoints
+│   │   ├── audit_routes.py # Governance endpoints
+│   │   └── services/      # Business logic
+│   ├── config/            # Settings, Swagger config
+│   ├── templates/         # HTML templates
+│   ├── static/            # CSS, JS assets
+│   ├── utils/             # Logging, database utils
+│   ├── main.py            # Flask app factory
+│   └── wsgi.py            # Gunicorn entry point
+│
+├── notebooks/              # 📓 JUPYTER NOTEBOOKS
+│   └── mission7.ipynb     # Main training notebook
+│
+├── src/                    # 🔬 ML/TRAINING CODE
+│   ├── classes/           # ML model classes
+│   ├── database/          # SQLAlchemy models
+│   └── scripts/           # Training & export scripts
+│
+├── prod_models/            # 📦 PRODUCTION MODEL
+│   ├── model.pkl          # Trained LightGBM model
+│   ├── threshold.json     # Optimal threshold
+│   ├── metadata.json      # Model metrics & info
+│   ├── feature_names.txt  # 125 features list
+│   └── drift_report.html  # Evidently drift report
+│
+├── dataset/                # 💾 DATA FILES
+│   └── home_credit.db     # SQLite database
+│
+├── nginx/                  # 🌐 REVERSE PROXY
+│   └── default.conf       # Nginx configuration
+│
+├── tests/                  # ✅ PYTEST TESTS
+│   ├── test_api_endpoints.py
+│   ├── test_model_validation.py
+│   └── test_environment.py
+│
+├── mlruns/                 # 📊 MLFLOW EXPERIMENTS
+│
+├── docker-compose.yml      # Development stack
+├── docker-compose.prod.yml # Production stack
+├── Dockerfile              # Dev image (Jupyter)
+├── Dockerfile.prod         # Production image
+└── requirements.txt        # Python dependencies
 ```
 
-#### Option 2: AWS Lightsail
+---
+
+## 🚀 Quick Start
+
+### Development Mode (Jupyter + MLflow)
 ```bash
-./scripts/setup_lightsail.sh
+docker compose up -d
 ```
 
-#### CI/CD Pipeline
-- Push to `main` branch triggers GitHub Actions
-- Tests run automatically via pytest
-- Docker image built and verified
-- Deploy to Lightsail (requires secrets)
+| Service | URL |
+|---------|-----|
+| Jupyter Lab | http://localhost:8888 |
+| MLflow UI | http://localhost:5005 |
+
+### Production Mode (API + PostgreSQL)
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+| Service | URL |
+|---------|-----|
+| Dashboard | http://localhost |
+| API Docs (Swagger) | http://localhost/api/docs |
+| API Health | http://localhost/api/health |
+| MLflow Registry | http://localhost:5002 |
 
 ---
 
-### 📊 Model Performance
+## 📊 Model Performance
 
 | Metric | Value |
 |--------|-------|
 | **Algorithm** | LightGBM |
-| **Business Cost** | 0.5354 |
+| **AUC-ROC** | 0.751 |
+| **F1-Score** | 0.275 |
+| **Recall** | 0.640 |
 | **Optimal Threshold** | 0.45 |
-| **AUC** | ~0.75 |
+| **Business Cost** | 0.535 |
 | **Features** | 125 |
 
 ---
 
-### 🔧 API Endpoints
+## 🔌 API Endpoints
 
+### Core Endpoints
 ```bash
 # Health check
-curl http://localhost:8070/api/health
+curl http://localhost/api/health
+
+# Make prediction
+curl -X POST http://localhost/predict \
+  -H "Content-Type: application/json" \
+  -d '{"client_id": 100002}'
+
+# Get client data
+curl http://localhost/api/client/100002
 
 # Model info
-curl http://localhost:8070/api/model/info
+curl http://localhost/api/model/info
+```
 
-# Prediction
-curl -X POST http://localhost:8070/predict -d "client_id=100002"
+### Audit & Governance
+```bash
+# Model governance documentation
+curl http://localhost/api/audit/model-governance
+
+# ML Model Card
+curl http://localhost/api/audit/model-card
+
+# Feature documentation (125 features)
+curl http://localhost/api/audit/features
+
+# Data drift report
+curl http://localhost/api/audit/drift-report
+
+# Evidently HTML report
+open http://localhost/api/audit/drift-report-html
+```
+
+### Model Management
+```bash
+# List all models
+curl http://localhost/api/models/list
+
+# Current model details
+curl http://localhost/api/models/current
 ```
 
 ---
 
-###  Project Structure
-`	ext
- notebooks/           # Complete ML Pipeline (12-step workflow)
- src/
-    classes/         # Business Logic (Training, Visualization, Scoring)
-    scripts/         # Utilities (Split, Drift, Registration)
- dataset/             # Data Storage (SQLite & CSV)
- docker-compose.yml   # Multi-container orchestration
- Dockerfile           # Python environment
-`
+## 🔄 CI/CD Pipeline
 
-###  Key Performance Indicators (KPIs)
-- **Model Stability**: Generalization gap < 0.004 (AUC).
-- **Financial Impact**: Optimized threshold (0.45) reducing default costs by ~15% compared to the standard 0.5 threshold.
-- **Performance**: Imputation pipeline 90% faster than traditional KNN methods.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    LOCAL (Development)                   │
+├─────────────────────────────────────────────────────────┤
+│  1. Train model in notebook (notebooks/mission7.ipynb)  │
+│  2. Register to MLflow (experiments tracked)            │
+│  3. Export best model to prod_models/                   │
+│  4. Git commit + push                                   │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                  GitHub Actions CI/CD                    │
+├─────────────────────────────────────────────────────────┤
+│  1. Run tests (pytest) ✅                               │
+│  2. Build Docker image                                  │
+│  3. Deploy to Lightsail:                                │
+│     • git pull (includes prod_models/)                  │
+│     • docker compose up --build                         │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                 PRODUCTION (Lightsail)                   │
+├─────────────────────────────────────────────────────────┤
+│  • API serves model from prod_models/                   │
+│  • PostgreSQL for audit trail                           │
+│  • SHAP values logged for each prediction               │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
-*This project demonstrates the ability to design, train, and industrialize a Machine Learning model in a demanding financial context.*
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+docker exec mission7_api_prod pytest tests/ -v
+
+# Run specific test file
+docker exec mission7_api_prod pytest tests/test_api_endpoints.py -v
+
+# Run with coverage
+docker exec mission7_api_prod pytest tests/ --cov=app
+```
+
+**Test Coverage:**
+- ✅ Health endpoint
+- ✅ Prediction endpoint
+- ✅ Client data endpoint
+- ✅ Model governance
+- ✅ Audit features (125 features)
+- ✅ Model validation
+- ✅ WCAG accessibility
+
+---
+
+## 🏗️ Architecture
+
+```
+                    ┌─────────────┐
+                    │   NGINX     │ :80
+                    │  (Reverse   │
+                    │   Proxy)    │
+                    └──────┬──────┘
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+              ▼                         ▼
+       ┌─────────────┐          ┌─────────────┐
+       │  Flask API  │          │   MLflow    │ :5002
+       │   Gunicorn  │ :8000    │  Registry   │
+       └──────┬──────┘          └─────────────┘
+              │
+    ┌─────────┴─────────┐
+    │                   │
+    ▼                   ▼
+┌─────────┐      ┌─────────────┐
+│ Model   │      │ PostgreSQL  │ :5432
+│ (pkl)   │      │ (Audit Log) │
+└─────────┘      └─────────────┘
+```
+
+---
+
+## 📋 Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `USE_POSTGRES` | `true` | Enable PostgreSQL for audit |
+| `DB_URI` | `postgresql://...` | Database connection |
+| `MLFLOW_TRACKING_URI` | `http://mlflow:5002` | MLflow server |
+| `PROD_MODEL_PATH` | `/app/prod_models/model.pkl` | Model location |
+
+---
+
+## 📜 License
+
+Proprietary - Educational Project
+
+---
+
+## 👥 Author
+
+Data Science Training - Mission 7 (2025)

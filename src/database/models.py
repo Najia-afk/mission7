@@ -9,8 +9,8 @@ from typing import Optional
 from datetime import datetime
 
 from sqlalchemy import (
-    BigInteger, Float, String, Integer, DateTime,
-    Index, create_engine, text
+    BigInteger, Float, String, Integer, DateTime, Text,
+    Index, create_engine, text, JSON
 )
 from sqlalchemy.orm import (
     DeclarativeBase, Mapped, mapped_column,
@@ -340,6 +340,7 @@ class Prediction(Base):
     """
     Log of all predictions made by the API.
     Used for drift monitoring and compliance audit.
+    Includes SHAP values as JSON for debugging/explainability.
     """
     __tablename__ = 'predictions'
     
@@ -350,6 +351,7 @@ class Prediction(Base):
     decision: Mapped[str] = mapped_column(String(20), nullable=False)  # ACCEPTED / REJECTED
     model_version: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     request_source: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    shap_values: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # SHAP as JSON
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         default=datetime.utcnow, 
@@ -359,6 +361,26 @@ class Prediction(Base):
     __table_args__ = (
         Index('idx_predictions_client_id', 'client_id'),
         Index('idx_predictions_created_at', 'created_at'),
+    )
+
+
+class ModelArtifact(Base):
+    """
+    Store model artifacts (drift reports, metadata) per model version.
+    Linked to model_id from MLflow registry.
+    """
+    __tablename__ = 'model_artifacts'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    model_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    artifact_type: Mapped[str] = mapped_column(String(50), nullable=False)  # drift_report, shap_global, metadata
+    artifact_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    artifact_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # HTML/JSON as text
+    artifact_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Structured data
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        Index('idx_model_artifacts_model_id', 'model_id'),
     )
 
 

@@ -1,0 +1,220 @@
+/* =================================================================
+   Responsive Styles - Credit Scoring Dashboard
+   Media queries and responsive adaptations
+================================================================= */
+
+/* Large Screens (1200px+) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1200px;
+    }
+}
+
+/* Medium Screens (992px - 1199px) */
+@media (max-width: 1199px) {
+    .container {
+        max-width: 960px;
+    }
+}
+
+/* Tablets (768px - 991px) */
+@media (max-width: 991px) {
+    .container {
+        max-width: 720px;
+    }
+    
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metric-value {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+/* Mobile Landscape (576px - 767px) */
+@media (max-width: 767px) {
+    :root {
+        --spacing-xl: 1.5rem;
+        --spacing-2xl: 2rem;
+    }
+    
+    .container {
+        max-width: 100%;
+        padding: 0 var(--spacing-md);
+    }
+    
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        padding: var(--spacing-lg) 0;
+    }
+    
+    .page-header h1 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .card {
+        padding: var(--spacing-md);
+    }
+    
+    /* Stack buttons on mobile */
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    /* Full width forms on mobile */
+    .form-row {
+        flex-direction: column;
+    }
+    
+    /* Smaller metric values */
+    .metric-value {
+        font-size: var(--font-size-xl);
+    }
+    
+    /* Table horizontal scroll */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+    
+    /* Adjust tabs for mobile */
+    .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab {
+        padding: var(--spacing-sm) var(--spacing-md);
+        white-space: nowrap;
+    }
+}
+
+/* Mobile Portrait (< 576px) */
+@media (max-width: 575px) {
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    
+    .btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+    
+    .btn-lg {
+        padding: var(--spacing-md) var(--spacing-lg);
+        font-size: var(--font-size-base);
+    }
+    
+    .alert {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    /* Stack metric boxes */
+    .metric-box {
+        padding: var(--spacing-md);
+    }
+    
+    /* Simplify navigation */
+    .nav-links a {
+        padding: var(--spacing-sm);
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* Print Styles */
+@media print {
+    /* Hide navigation and non-essential elements */
+    header,
+    footer,
+    .no-print,
+    .btn {
+        display: none !important;
+    }
+    
+    /* Reset backgrounds for print */
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        break-inside: avoid;
+    }
+    
+    /* Ensure good contrast */
+    a {
+        color: black;
+        text-decoration: underline;
+    }
+    
+    .badge {
+        border: 1px solid currentColor;
+    }
+    
+    /* Page breaks */
+    h2, h3 {
+        page-break-after: avoid;
+    }
+    
+    .section-card {
+        page-break-inside: avoid;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --border-light: #000;
+        --border-medium: #000;
+    }
+    
+    .card {
+        border-width: 2px;
+    }
+    
+    .btn {
+        border-width: 2px;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    /* Uncomment to enable dark mode
+    :root {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-white: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-light: #334155;
+        --border-medium: #475569;
+    }
+    */
+}

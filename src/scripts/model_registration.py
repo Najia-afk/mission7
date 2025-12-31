@@ -5,7 +5,7 @@ Registers the best model in MLflow with business metadata.
 import mlflow
 from mlflow.tracking import MlflowClient
 
-def register_best_model(experiment_name, run_name, model_name, optimal_threshold=None, min_cost=None, transition_to_prod=False):
+def register_best_model(experiment_name, run_name, model_name, optimal_threshold=None, min_cost=None, extra_metrics=None, transition_to_prod=False):
     """
     Finds a run by name, logs business metadata, registers the model, and optionally promotes it.
     
@@ -15,6 +15,7 @@ def register_best_model(experiment_name, run_name, model_name, optimal_threshold
         model_name: Name to give the registered model
         optimal_threshold: (Optional) The business-optimized threshold
         min_cost: (Optional) The minimum business cost achieved
+        extra_metrics: (Optional) Dict of additional metrics (auc_roc, f1, precision, recall, etc.)
         transition_to_prod: (Optional) If True, transitions the model to 'Production' stage
         
     Returns:
@@ -46,12 +47,21 @@ def register_best_model(experiment_name, run_name, model_name, optimal_threshold
             return None
 
         # 2. Log Business Metadata if provided
-        if optimal_threshold is not None or min_cost is not None:
+        if optimal_threshold is not None or min_cost is not None or extra_metrics is not None:
             with mlflow.start_run(run_id=run_id, nested=True):
                 if optimal_threshold is not None:
                     mlflow.log_param("business_optimal_threshold", optimal_threshold)
                 if min_cost is not None:
                     mlflow.log_metric("min_business_cost", min_cost)
+                
+                # Log all extra metrics (AUC, F1, Precision, Recall, etc.)
+                if extra_metrics:
+                    for key, value in extra_metrics.items():
+                        if isinstance(value, (int, float)):
+                            mlflow.log_metric(f"final_{key}", value)
+                        else:
+                            mlflow.log_param(f"final_{key}", value)
+                    print(f"Logged {len(extra_metrics)} performance metrics")
                 
                 mlflow.set_tag("model_status", "production_ready")
                 mlflow.set_tag("optimization_strategy", "cost_minimization")

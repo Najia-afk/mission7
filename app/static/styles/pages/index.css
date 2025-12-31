@@ -1,0 +1,149 @@
+/* =================================================================
+   Index Page Styles - Credit Scoring Dashboard
+   Specific styles for the main dashboard page
+================================================================= */
+
+/* Lead paragraph */
+.lead {
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    line-height: 1.7;
+}
+
+/* Tab Content Specific */
+.form-fields-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+
+/* Simulator Section Cards */
+.simulator-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+}
+
+.simulator-section h4 {
+    color: var(--header-bg);
+    font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary);
+}
+
+/* Result Card Styling */
+.result-card {
+    margin-top: var(--spacing-xl);
+    border-left: 4px solid var(--primary);
+}
+
+.result-card .metric-box {
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+}
+
+/* SHAP Container */
+.shap-container {
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    min-height: 300px;
+}
+
+/* Decision Colors in Results */
+#res_decision.ACCEPTED {
+    color: var(--success);
+}
+
+#res_decision.ACCEPTED::before {
+    content: "✓ ";
+}
+
+#res_decision.REJECTED {
+    color: var(--danger);
+}
+
+#res_decision.REJECTED::before {
+    content: "✗ ";
+}
+
+/* API Response Display */
+.api-response {
+    background: var(--header-bg);
+    color: #e2e8f0;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Quick Stats in DB Lookup */
+#tab-db-lookup .metric-box {
+    padding: var(--spacing-md);
+}
+
+#tab-db-lookup .metric-value {
+    font-size: var(--font-size-xl);
+}
+
+/* Audit Tab Metrics */
+#tab-audit .metric-box {
+    transition: transform var(--transition-fast);
+}
+
+#tab-audit .metric-box:hover {
+    transform: translateY(-2px);
+}
+
+/* Button text alignment fix */
+.btn.text-left {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.btn.text-left strong {
+    display: block;
+}
+
+.btn.text-left .form-text {
+    margin-top: var(--spacing-xs);
+    color: var(--text-muted);
+}
+
+/* Spinner for loading states */
+.btn .spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+    margin-right: var(--spacing-sm);
+}
+
+/* Hide/Show utility for JS */
+.hidden {
+    display: none !important;
+}
+
+/* Grid 5 columns for metrics */
+.grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 991px) {
+    .grid-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

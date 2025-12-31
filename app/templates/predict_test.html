@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Scoring - Prêt à dépenser | What-if Testing</title>
+    <meta name="description" content="Backend prediction testing with custom features">
+    
+    <!-- Modular CSS Architecture -->
+    <link rel="stylesheet" href="/static/styles/variables.css">
+    <link rel="stylesheet" href="/static/styles/base.css">
+    <link rel="stylesheet" href="/static/styles/layout.css">
+    <link rel="stylesheet" href="/static/styles/header.css">
+    <link rel="stylesheet" href="/static/styles/footer.css">
+    <link rel="stylesheet" href="/static/styles/components.css">
+    <link rel="stylesheet" href="/static/styles/responsive.css">
+    <link rel="stylesheet" href="/static/styles/pages/predict.css">
+    
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+    
+    <div class="app-wrapper">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <nav>
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Prêt à dépenser
+                    </a>
+                    <div class="nav-links">
+                        <a href="/">Home</a>
+                        <a href="/predict">Predict (Client)</a>
+                        <a href="/predict-test" class="active">Predict (Test)</a>
+                        <a href="/simulator">Simulator</a>
+                        <a href="/audit">Audit</a>
+                        <span class="nav-divider"></span>
+                        <a href="/runs">Runs</a>
+                        <a href="/dashboard">Dashboard</a>
+                        <span class="nav-divider"></span>
+                        <a href="/api/docs" target="_blank">API <span class="nav-badge">Swagger</span></a>
+                        <a href="/mlflow/" target="_blank">MLflow</a>
+                    </div>
+                    <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <div class="container">
+                <div class="section">
+                    <h1>What-if Analysis</h1>
+                    <p>Modify client data or create a new scenario to see how it affects the score.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Feature Editor</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Fetch existing client -->
+                        <div class="flex gap-md mb-lg" style="max-width: 500px;">
+                            <input type="number" class="form-control" id="fetch_id" placeholder="Fetch data for Client ID (optional)">
+                            <button class="btn btn-secondary" type="button" id="fetchBtn">Fetch & Fill</button>
+                        </div>
+
+                        <form id="whatIfForm">
+                            <div id="formFields" class="form-fields-container">
+                                <div class="text-center p-lg">
+                                    <p>Fetch a client to load their features, or use the simulator for a simplified form.</p>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg w-full mt-lg" id="whatIfSubmitBtn">
+                                Run Simulation
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Results Card -->
+                <div id="resultCard" class="card result-card hidden animate-fade-in mt-xl" role="region" aria-live="polite">
+                    <div class="card-header flex justify-between items-center">
+                        <h3 class="card-title">Analysis for Client #<span id="res_client_id"></span></h3>
+                        <span class="badge badge-info">Model: CreditScoring_BestModel</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-2 gap-lg text-center mb-lg">
+                            <div class="metric-box result-metric">
+                                <div class="metric-value" id="res_prob"></div>
+                                <div class="metric-label">Probability of Default</div>
+                            </div>
+                            <div class="metric-box result-metric">
+                                <div class="metric-value" id="res_decision"></div>
+                                <div class="metric-label">Final Decision</div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info text-center">
+                            Business Optimized Threshold: <strong><span id="res_threshold"></span></strong>
+                        </div>
+
+                        <div class="mt-lg">
+                            <h4>Decision Transparency (SHAP)</h4>
+                            <p class="form-text">Features pushing towards rejection (red) or acceptance (blue).</p>
+                            <div id="shapPlot" class="shap-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <div class="footer-simple">
+                    <p>&copy; 2025 Prêt à dépenser - MLOps Credit Scoring Platform</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentClientData = {};
+
+        // Fetch & Fill
+        document.getElementById('fetchBtn').onclick = async () => {
+            const id = document.getElementById('fetch_id').value;
+            if (!id) return alert("Please enter a Client ID");
+            
+            const btn = document.getElementById('fetchBtn');
+            btn.disabled = true;
+            btn.innerText = 'Fetching...';
+
+            try {
+                const response = await fetch(`/api/client/${id}`);
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    currentClientData = data;
+                    renderWhatIfForm(data);
+                }
+            } catch (err) {
+                alert("Failed to fetch client data");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Fetch & Fill';
+            }
+        };
+
+        function renderWhatIfForm(data) {
+            const container = document.getElementById('formFields');
+            container.innerHTML = '';
+            container.className = 'grid grid-4 gap-md form-fields-container';
+            
+            const keys = Object.keys(data).sort();
+            
+            keys.forEach(key => {
+                if (key === 'TARGET') return;
+                
+                const col = document.createElement('div');
+                col.className = 'form-group';
+                
+                const label = document.createElement('label');
+                label.className = 'form-label';
+                label.innerText = key;
+                
+                const input = document.createElement('input');
+                input.className = 'form-control';
+                input.name = key;
+                input.value = data[key] === null ? '' : data[key];
+                
+                if (typeof data[key] === 'number') {
+                    input.type = 'number';
+                    input.step = 'any';
+                } else {
+                    input.type = 'text';
+                }
+                
+                col.appendChild(label);
+                col.appendChild(input);
+                container.appendChild(col);
+            });
+        }
+
+        // What-if Form Submission
+        document.getElementById('whatIfForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('whatIfSubmitBtn');
+            const formData = new FormData(e.target);
+            const features = {};
+            
+            formData.forEach((value, key) => {
+                if (value === '') features[key] = null;
+                else if (!isNaN(value) && value.trim() !== '') features[key] = Number(value);
+                else features[key] = value;
+            });
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Simulating...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_id: features['SK_ID_CURR'] || 'WhatIf',
+                        features: features
+                    })
+                });
+                const data = await response.json();
+                if (data.error) alert("Error: " + data.error);
+                else displayResults(data);
+            } catch (err) {
+                alert("Simulation failed: " + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Run Simulation';
+            }
+        };
+
+        function displayResults(data) {
+            const resultCard = document.getElementById('resultCard');
+            document.getElementById('res_client_id').innerText = data.client_id;
+            document.getElementById('res_prob').innerText = (data.probability * 100).toFixed(1) + '%';
+            
+            const decisionEl = document.getElementById('res_decision');
+            decisionEl.innerText = data.decision;
+            decisionEl.className = 'metric-value ' + (data.decision === 'ACCEPTED' ? 'decision-approved' : 'decision-rejected');
+            
+            document.getElementById('res_threshold').innerText = data.threshold;
+            document.getElementById('shapPlot').innerHTML = data.shap_html || '';
+            
+            const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
+            for (let script of scripts) {
+                const newScript = document.createElement("script");
+                newScript.text = script.innerHTML;
+                document.body.appendChild(newScript).parentNode.removeChild(newScript);
+            }
+            
+            resultCard.classList.remove('hidden');
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+/* =================================================================
+   Audit Page Styles - Credit Scoring Dashboard
+   Specific styles for the regulatory audit page
+================================================================= */
+
+/* Lead paragraph */
+.lead {
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    line-height: 1.7;
+}
+
+/* Grid 5 columns for metrics */
+.grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 991px) {
+    .grid-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Table Styling */
+table code {
+    background: var(--bg-secondary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+/* Print optimizations */
+@media print {
+    .page-header {
+        background: var(--header-bg) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .card {
+        break-inside: avoid;
+    }
+    
+    .checklist-icon {
+        color: var(--success) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

@@ -1,0 +1,178 @@
+/* =================================================================
+   Header Styles - Credit Scoring Dashboard
+   Navigation and header components
+================================================================= */
+
+/* Header Container */
+header {
+    background: var(--header-bg);
+    color: var(--text-inverse);
+    padding: var(--spacing-md) 0;
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Navigation Layout */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Logo */
+.logo {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text-inverse);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.logo:hover {
+    color: var(--text-inverse);
+    text-decoration: none;
+    opacity: 0.9;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+}
+
+/* Navigation Links */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.nav-links a {
+    color: rgba(255, 255, 255, 0.85);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.nav-links a:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-inverse);
+    text-decoration: none;
+}
+
+.nav-links a.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-inverse);
+}
+
+/* Navigation Divider */
+.nav-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.3);
+    margin: 0 var(--spacing-sm);
+}
+
+/* API Badge in Nav */
+.nav-badge {
+    background: var(--success);
+    color: var(--text-inverse);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    margin-left: var(--spacing-xs);
+}
+
+/* Mobile Menu Toggle */
+.menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-inverse);
+    padding: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.menu-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Page Header Banner */
+.page-header {
+    background: linear-gradient(135deg, var(--header-bg) 0%, var(--primary) 100%);
+    color: var(--text-inverse);
+    padding: var(--spacing-xl) 0;
+    margin-bottom: var(--spacing-xl);
+}
+
+.page-header h1 {
+    color: var(--text-inverse);
+    margin-bottom: var(--spacing-sm);
+}
+
+.page-header p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: var(--font-size-lg);
+    margin-bottom: 0;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: var(--spacing-md);
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.breadcrumb a:hover {
+    color: var(--text-inverse);
+}
+
+.breadcrumb-separator {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive Header */
+@media (max-width: 768px) {
+    nav {
+        flex-wrap: wrap;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+    
+    .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        padding-top: var(--spacing-md);
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        margin-top: var(--spacing-md);
+    }
+    
+    .nav-links.active {
+        display: flex;
+    }
+    
+    .nav-links a {
+        width: 100%;
+        padding: var(--spacing-md);
+    }
+    
+    .nav-divider {
+        display: none;
+    }
+}

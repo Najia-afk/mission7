@@ -46,7 +46,10 @@ def export_production_model(model_name: str, output_dir: str = "/app/prod_models
         # Get threshold from params or default
         optimal_threshold = float(run_params.get("business_optimal_threshold", 0.45))
         business_cost = run_metrics.get("min_business_cost", None)
-        auc = run_metrics.get("test_auc", run_metrics.get("val_auc", None))
+        auc = run_metrics.get("final_auc_roc", run_metrics.get("test_auc", run_metrics.get("val_auc", None)))
+        
+        # Get all final metrics (logged during registration)
+        final_metrics = {k.replace("final_", ""): v for k, v in run_metrics.items() if k.startswith("final_")}
         
         # 4. Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
@@ -85,13 +88,30 @@ def export_production_model(model_name: str, output_dir: str = "/app/prod_models
             "model_name": model_name,
             "model_version": prod_version.version,
             "algorithm": run_params.get("classifier__class_name", "LightGBM"),
-            "auc": auc,
-            "business_cost": business_cost,
             "optimal_threshold": optimal_threshold,
             "training_date": run.info.start_time,
             "export_date": datetime.now().isoformat(),
             "mlflow_model_uri": model_uri,
-            "n_features": len(feature_names) if feature_names else None
+            "n_features": len(feature_names) if feature_names else None,
+            # Performance metrics
+            "metrics": {
+                "auc_roc": final_metrics.get("auc_roc", auc),
+                "f1_score": final_metrics.get("f1_score"),
+                "precision": final_metrics.get("precision"),
+                "recall": final_metrics.get("recall"),
+                "accuracy": final_metrics.get("accuracy"),
+                "business_cost_avg": final_metrics.get("business_cost_avg", business_cost),
+                "business_cost_total": final_metrics.get("business_cost_total"),
+            },
+            # Confusion matrix stats
+            "confusion_matrix": {
+                "true_positives": final_metrics.get("true_positives"),
+                "true_negatives": final_metrics.get("true_negatives"),
+                "false_positives": final_metrics.get("false_positives"),
+                "false_negatives": final_metrics.get("false_negatives"),
+            },
+            "test_set_size": final_metrics.get("test_set_size"),
+            "positive_rate": final_metrics.get("positive_rate"),
         }
         
         metadata_path = os.path.join(output_dir, "metadata.json")
@@ -103,7 +123,12 @@ def export_production_model(model_name: str, output_dir: str = "/app/prod_models
         print(f"\n📦 Model Export Complete!")
         print(f"   Version: v{prod_version.version}")
         print(f"   Threshold: {optimal_threshold:.2f}")
-        print(f"   Business Cost: {business_cost}")
+        if final_metrics:
+            print(f"   AUC-ROC: {final_metrics.get('auc_roc', 'N/A')}")
+            print(f"   F1-Score: {final_metrics.get('f1_score', 'N/A')}")
+            print(f"   Precision: {final_metrics.get('precision', 'N/A')}")
+            print(f"   Recall: {final_metrics.get('recall', 'N/A')}")
+            print(f"   Business Cost: {final_metrics.get('business_cost_avg', 'N/A')}")
         print(f"   Output: {output_dir}")
         
         return metadata

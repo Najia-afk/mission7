@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Scoring - Prêt à dépenser | Simulator</title>
+    <meta name="description" content="Simplified credit scoring simulator for end-users">
+    
+    <!-- Modular CSS Architecture -->
+    <link rel="stylesheet" href="/static/styles/variables.css">
+    <link rel="stylesheet" href="/static/styles/base.css">
+    <link rel="stylesheet" href="/static/styles/layout.css">
+    <link rel="stylesheet" href="/static/styles/header.css">
+    <link rel="stylesheet" href="/static/styles/footer.css">
+    <link rel="stylesheet" href="/static/styles/components.css">
+    <link rel="stylesheet" href="/static/styles/responsive.css">
+    <link rel="stylesheet" href="/static/styles/pages/predict.css">
+    
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+    
+    <div class="app-wrapper">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <nav>
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Prêt à dépenser
+                    </a>
+                    <div class="nav-links">
+                        <a href="/">Home</a>
+                        <a href="/predict">Predict (Client)</a>
+                        <a href="/predict-test">Predict (Test)</a>
+                        <a href="/simulator" class="active">Simulator</a>
+                        <a href="/audit">Audit</a>
+                        <span class="nav-divider"></span>
+                        <a href="/runs">Runs</a>
+                        <a href="/dashboard">Dashboard</a>
+                        <span class="nav-divider"></span>
+                        <a href="/api/docs" target="_blank">API <span class="nav-badge">Swagger</span></a>
+                        <a href="/mlflow/" target="_blank">MLflow</a>
+                    </div>
+                    <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <div class="container">
+                <div class="section">
+                    <h1>Credit Scoring Simulator</h1>
+                    <p>Enter your information to get an instant credit eligibility estimate. This simulator uses the same AI model as our loan officers.</p>
+                </div>
+
+                <div class="grid grid-2 gap-xl">
+                    <!-- Form Column -->
+                    <div>
+                        <form id="simulatorForm">
+                            <!-- Personal Information -->
+                            <div class="card mb-lg">
+                                <div class="card-header">
+                                    <h3 class="card-title">Personal Information</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="form-label">Gender</label>
+                                        <select name="CODE_GENDER" class="form-control" required>
+                                            <option value="">Select...</option>
+                                            <option value="M">Male</option>
+                                            <option value="F">Female</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Age (years)</label>
+                                        <input type="number" name="AGE_YEARS" class="form-control" min="18" max="100" required>
+                                        <p class="form-text">Minimum age: 18 years</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Family Status</label>
+                                        <select name="NAME_FAMILY_STATUS" class="form-control" required>
+                                            <option value="">Select...</option>
+                                            <option value="Single / not married">Single</option>
+                                            <option value="Married">Married</option>
+                                            <option value="Civil marriage">Civil Marriage</option>
+                                            <option value="Separated">Separated</option>
+                                            <option value="Widow">Widow(er)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Number of Children</label>
+                                        <input type="number" name="CNT_CHILDREN" class="form-control" min="0" max="20" value="0" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Number of Family Members</label>
+                                        <input type="number" name="CNT_FAM_MEMBERS" class="form-control" min="1" max="20" value="1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Education Level</label>
+                                        <select name="NAME_EDUCATION_TYPE" class="form-control" required>
+                                            <option value="">Select...</option>
+                                            <option value="Lower secondary">Lower Secondary</option>
+                                            <option value="Secondary / secondary special">Secondary</option>
+                                            <option value="Incomplete higher">Incomplete Higher</option>
+                                            <option value="Higher education">Higher Education</option>
+                                            <option value="Academic degree">Academic Degree</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Employment & Income -->
+                            <div class="card mb-lg">
+                                <div class="card-header">
+                                    <h3 class="card-title">Employment & Income</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="form-label">Income Type</label>
+                                        <select name="NAME_INCOME_TYPE" class="form-control" required>
+                                            <option value="">Select...</option>
+                                            <option value="Working">Working (Employee)</option>
+                                            <option value="Commercial associate">Commercial Associate</option>
+                                            <option value="State servant">State Servant</option>
+                                            <option value="Pensioner">Pensioner</option>
+                                            <option value="Student">Student</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Annual Income (€)</label>
+                                        <input type="number" name="AMT_INCOME_TOTAL" class="form-control" min="0" step="1000" required>
+                                        <p class="form-text">Your total annual income before taxes</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Employment Duration (years)</label>
+                                        <input type="number" name="YEARS_EMPLOYED" class="form-control" min="0" max="50" step="0.5" required>
+                                        <p class="form-text">Years at current employer</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Organization Type</label>
+                                        <select name="ORGANIZATION_TYPE" class="form-control" required>
+                                            <option value="">Select...</option>
+                                            <option value="Business Entity Type 3">Business Entity</option>
+                                            <option value="Government">Government</option>
+                                            <option value="School">Education</option>
+                                            <option value="Medicine">Healthcare</option>
+                                            <option value="Self-employed">Self-employed</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Loan Details -->
+                            <div class="card mb-lg">
+                                <div class="card-header">
+                                    <h3 class="card-title">Loan Request</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="form-label">Loan Amount Requested (€)</label>
+                                        <input type="number" name="AMT_CREDIT" class="form-control" min="1000" step="1000" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Monthly Payment (€)</label>
+                                        <input type="number" name="AMT_ANNUITY" class="form-control" min="50" step="50" required>
+                                        <p class="form-text">Desired monthly repayment amount</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Contract Type</label>
+                                        <select name="NAME_CONTRACT_TYPE" class="form-control" required>
+                                            <option value="">Select...</option>
+                                            <option value="Cash loans">Cash Loan</option>
+                                            <option value="Revolving loans">Revolving Credit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- External Scores -->
+                            <div class="card mb-lg">
+                                <div class="card-header">
+                                    <h3 class="card-title">External Scores (Optional)</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info mb-md">
+                                        These scores are typically obtained from credit bureaus. Leave blank if unknown.
+                                    </div>
+                                    <div class="grid grid-3 gap-md">
+                                        <div class="form-group">
+                                            <label class="form-label">EXT_SOURCE_1</label>
+                                            <input type="number" name="EXT_SOURCE_1" class="form-control" min="0" max="1" step="0.01" placeholder="0-1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">EXT_SOURCE_2</label>
+                                            <input type="number" name="EXT_SOURCE_2" class="form-control" min="0" max="1" step="0.01" placeholder="0-1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">EXT_SOURCE_3</label>
+                                            <input type="number" name="EXT_SOURCE_3" class="form-control" min="0" max="1" step="0.01" placeholder="0-1">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-full" id="simulateBtn">
+                                Check My Eligibility
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Results Column -->
+                    <div>
+                        <div id="resultCard" class="card result-card hidden sticky-result animate-fade-in" role="region" aria-live="polite">
+                            <div class="card-header">
+                                <h3 class="card-title">Your Simulation Result</h3>
+                            </div>
+                            <div class="card-body text-center">
+                                <div id="resultDecision" class="result-decision-large mb-lg">
+                                    <!-- APPROVED or REJECTED -->
+                                </div>
+                                
+                                <div class="result-gauge mb-lg">
+                                    <div class="gauge-label">Risk Score</div>
+                                    <div id="resultProb" class="gauge-value">--</div>
+                                    <p class="form-text">Lower is better (probability of default)</p>
+                                </div>
+
+                                <div class="alert alert-info mb-lg">
+                                    <strong>Business Threshold:</strong> <span id="resultThreshold">--</span>
+                                </div>
+
+                                <div class="result-explanation mb-lg text-left">
+                                    <h4>Key Factors</h4>
+                                    <p class="form-text">Features that most influenced this decision:</p>
+                                    <div id="shapPlot" class="shap-container"></div>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <strong>Disclaimer:</strong> This is a simulation only. Final decisions are made by our credit analysts based on a complete review of your application.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Placeholder when no result -->
+                        <div id="resultPlaceholder" class="card">
+                            <div class="card-body text-center p-xl">
+                                <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 80px; height: 80px; margin: 0 auto 1rem; opacity: 0.3;">
+                                    <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <h3 class="mb-sm">Ready to Simulate</h3>
+                                <p class="text-muted">Fill in the form and click "Check My Eligibility" to see your instant credit score simulation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <div class="footer-simple">
+                    <p>&copy; 2025 Prêt à dépenser - MLOps Credit Scoring Platform</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('simulatorForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('simulateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+            
+            const formData = new FormData(e.target);
+            const features = {};
+            
+            // Process form data and convert to expected feature format
+            formData.forEach((value, key) => {
+                if (value === '') {
+                    features[key] = null;
+                } else if (!isNaN(value) && value.trim() !== '') {
+                    features[key] = Number(value);
+                } else {
+                    features[key] = value;
+                }
+            });
+            
+            // Convert simulator fields to model features
+            const modelFeatures = {
+                // Direct mappings
+                CODE_GENDER: features.CODE_GENDER,
+                NAME_FAMILY_STATUS: features.NAME_FAMILY_STATUS,
+                CNT_CHILDREN: features.CNT_CHILDREN,
+                CNT_FAM_MEMBERS: features.CNT_FAM_MEMBERS,
+                NAME_EDUCATION_TYPE: features.NAME_EDUCATION_TYPE,
+                NAME_INCOME_TYPE: features.NAME_INCOME_TYPE,
+                AMT_INCOME_TOTAL: features.AMT_INCOME_TOTAL,
+                ORGANIZATION_TYPE: features.ORGANIZATION_TYPE,
+                AMT_CREDIT: features.AMT_CREDIT,
+                AMT_ANNUITY: features.AMT_ANNUITY,
+                NAME_CONTRACT_TYPE: features.NAME_CONTRACT_TYPE,
+                EXT_SOURCE_1: features.EXT_SOURCE_1,
+                EXT_SOURCE_2: features.EXT_SOURCE_2,
+                EXT_SOURCE_3: features.EXT_SOURCE_3,
+                
+                // Calculated fields (convert years to days as used in model)
+                DAYS_BIRTH: features.AGE_YEARS ? -features.AGE_YEARS * 365 : null,
+                DAYS_EMPLOYED: features.YEARS_EMPLOYED ? -features.YEARS_EMPLOYED * 365 : null,
+                
+                // Derived features
+                CREDIT_INCOME_PERCENT: features.AMT_CREDIT && features.AMT_INCOME_TOTAL ? 
+                    features.AMT_CREDIT / features.AMT_INCOME_TOTAL : null,
+                ANNUITY_INCOME_PERCENT: features.AMT_ANNUITY && features.AMT_INCOME_TOTAL ? 
+                    features.AMT_ANNUITY / features.AMT_INCOME_TOTAL : null,
+                CREDIT_TERM: features.AMT_CREDIT && features.AMT_ANNUITY ? 
+                    features.AMT_CREDIT / features.AMT_ANNUITY : null,
+            };
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_id: 'Simulation_' + Date.now(),
+                        features: modelFeatures
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    displayResults(data);
+                }
+            } catch (err) {
+                alert("Simulation failed: " + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Check My Eligibility';
+            }
+        };
+
+        function displayResults(data) {
+            document.getElementById('resultPlaceholder').classList.add('hidden');
+            const resultCard = document.getElementById('resultCard');
+            
+            // Decision
+            const decisionEl = document.getElementById('resultDecision');
+            if (data.decision === 'ACCEPTED') {
+                decisionEl.innerHTML = '<span class="decision-approved-large">✓ ELIGIBLE</span>';
+                decisionEl.className = 'result-decision-large approved';
+            } else {
+                decisionEl.innerHTML = '<span class="decision-rejected-large">✗ NOT ELIGIBLE</span>';
+                decisionEl.className = 'result-decision-large rejected';
+            }
+            
+            // Probability
+            document.getElementById('resultProb').innerText = (data.probability * 100).toFixed(1) + '%';
+            document.getElementById('resultThreshold').innerText = (data.threshold * 100).toFixed(1) + '%';
+            
+            // SHAP Plot
+            document.getElementById('shapPlot').innerHTML = data.shap_html || '<p class="text-muted">No explainability data available</p>';
+            
+            // Execute any scripts in SHAP HTML
+            const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
+            for (let script of scripts) {
+                const newScript = document.createElement("script");
+                newScript.text = script.innerHTML;
+                document.body.appendChild(newScript).parentNode.removeChild(newScript);
+            }
+            
+            resultCard.classList.remove('hidden');
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+    </script>
+
+    <style>
+        /* Additional simulator-specific styles */
+        .sticky-result {
+            position: sticky;
+            top: 100px;
+        }
+        
+        .result-decision-large {
+            padding: var(--space-lg);
+        }
+        
+        .decision-approved-large {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+        
+        .decision-rejected-large {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--danger);
+        }
+        
+        .result-gauge {
+            padding: var(--space-lg);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+        }
+        
+        .gauge-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-xs);
+        }
+        
+        .gauge-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .placeholder-icon {
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 768px) {
+            .sticky-result {
+                position: relative;
+                top: 0;
+            }
+        }
+    </style>
+</body>
+</html>

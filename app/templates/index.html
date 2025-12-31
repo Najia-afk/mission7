@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Scoring - Prêt à dépenser | Home</title>
+    <meta name="description" content="Tableau de bord MLOps pour l'évaluation du risque crédit">
+    
+    <!-- Modular CSS Architecture -->
+    <link rel="stylesheet" href="/static/styles/variables.css">
+    <link rel="stylesheet" href="/static/styles/base.css">
+    <link rel="stylesheet" href="/static/styles/layout.css">
+    <link rel="stylesheet" href="/static/styles/header.css">
+    <link rel="stylesheet" href="/static/styles/footer.css">
+    <link rel="stylesheet" href="/static/styles/components.css">
+    <link rel="stylesheet" href="/static/styles/responsive.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+    
+    <div class="app-wrapper">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <nav>
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Prêt à dépenser
+                    </a>
+                    <div class="nav-links">
+                        <a href="/" class="active">Home</a>
+                        <a href="/predict">Predict (Client)</a>
+                        <a href="/predict-test">Predict (Test)</a>
+                        <a href="/simulator">Simulator</a>
+                        <a href="/audit">Audit</a>
+                        <span class="nav-divider"></span>
+                        <a href="/runs">Runs</a>
+                        <a href="/dashboard">Dashboard</a>
+                        <span class="nav-divider"></span>
+                        <a href="/api/docs" target="_blank">API <span class="nav-badge">Swagger</span></a>
+                        <a href="/mlflow/" target="_blank">MLflow</a>
+                    </div>
+                    <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <div class="container">
+                <div class="section">
+                    <h1>Credit Scoring Portal</h1>
+                    <p>Évaluation automatisée du risque crédit avec transparence RGPD pour Prêt à dépenser.</p>
+                </div>
+
+                <div class="grid grid-auto">
+                    <div class="card">
+                        <h3>Client Prediction</h3>
+                        <p>Enter a client ID to check their eligibility using the production model.</p>
+                        <a href="/predict" class="btn btn-primary">Go to Predict</a>
+                    </div>
+                    <div class="card">
+                        <h3>What-if Testing</h3>
+                        <p>Test predictions with custom feature values for backend testing.</p>
+                        <a href="/predict-test" class="btn btn-primary">Go to Test</a>
+                    </div>
+                    <div class="card">
+                        <h3>End-user Simulator</h3>
+                        <p>Simplified form for quick scenario testing with human-readable inputs.</p>
+                        <a href="/simulator" class="btn btn-primary">Go to Simulator</a>
+                    </div>
+                    <div class="card">
+                        <h3>Audit & Governance</h3>
+                        <p>Regulatory compliance documentation for BCE and FINMA.</p>
+                        <a href="/audit" class="btn btn-success">View Audit</a>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 mt-xl">
+                    <div class="card">
+                        <h3>System Status</h3>
+                        <div id="status-container">
+                            <div class="alert alert-info">Checking system status...</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Model Info</h3>
+                        <div class="grid grid-2 gap-md">
+                            <div class="metric-box">
+                                <div class="metric-value" id="model-type">LightGBM</div>
+                                <div class="metric-label">Model Type</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="metric-value" id="model-threshold">0.45</div>
+                                <div class="metric-label">Threshold</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <div class="footer-simple">
+                    <p>&copy; 2025 Prêt à dépenser - MLOps Credit Scoring Platform</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Check system health
+        fetch('/health')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status-container').innerHTML = 
+                    '<div class="alert alert-success">System Status: ' + data.status + '</div>';
+            })
+            .catch(err => {
+                document.getElementById('status-container').innerHTML = 
+                    '<div class="alert alert-danger">System Error: ' + err + '</div>';
+            });
+        
+        // Load model info
+        fetch('/api/audit/model-governance')
+            .then(r => r.json())
+            .then(data => {
+                if (data.model_identification) {
+                    document.getElementById('model-type').textContent = data.model_identification.type || 'LightGBM';
+                }
+                if (data.performance_metrics) {
+                    document.getElementById('model-threshold').textContent = 
+                        data.performance_metrics.optimal_threshold?.toFixed(2) || '0.45';
+                }
+            })
+            .catch(console.error);
+        
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
