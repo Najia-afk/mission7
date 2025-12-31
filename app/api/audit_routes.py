@@ -130,7 +130,7 @@ def predictions():
             "use_postgres": False
         }), 400
     
-    return jsonify(audit_service.get_prediction_history())
+    return jsonify(audit_service.get_prediction_audit_log())
 
 
 @audit_bp.route('/drift-report')
@@ -183,7 +183,10 @@ def drift_report_html():
     """
     config = get_config()
     prod_models_dir = os.path.dirname(config.PROD_MODEL_PATH)
-    html_report_path = os.path.join(prod_models_dir, "drift_report.html")
+    # Try both possible filenames for drift report
+    html_report_path = os.path.join(prod_models_dir, "evidently_data_drift_report.html")
+    if not os.path.exists(html_report_path):
+        html_report_path = os.path.join(prod_models_dir, "drift_report.html")
     
     if os.path.exists(html_report_path):
         return send_file(
