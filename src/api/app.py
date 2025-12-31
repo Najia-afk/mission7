@@ -3,6 +3,7 @@ import sys
 import json
 import pickle
 from datetime import datetime
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, jsonify
@@ -261,6 +262,211 @@ def index():
 def audit_page():
     """Standalone audit documentation page for BCE/FINMA regulators."""
     return render_template('audit.html')
+
+
+# =============================================================================
+# MODEL MANAGEMENT ENDPOINTS (from mission7_dashboard)
+# =============================================================================
+
+@app.route('/api/models/list')
+def list_models():
+    """
+    List all available models in prod_models directory and MLflow registry.
+    Allows switching between model versions.
+    """
+    try:
+        models = []
+        prod_models_dir = Path(PROD_MODEL_PATH).parent
+        
+        # List file-based models in prod_models/
+        if prod_models_dir.exists():
+            for model_file in prod_models_dir.glob("*.pkl"):
+                # Try different naming conventions for metadata
+                possible_metadata = [
+                    prod_models_dir / "metadata.json",
+                    prod_models_dir / f"{model_file.stem}_metadata.json",
+                ]
+                
+                metadata = {}
+                for mp in possible_metadata:
+                    if mp.exists():
+                        with open(mp, 'r') as f:
+                            metadata = json.load(f)
+                        break
+                
+                models.append({
+                    "source": "file",
+                    "path": str(model_file),
+                    "name": model_file.stem,
+                    "active": str(model_file) == PROD_MODEL_PATH,
+                    "metadata": metadata
+                })
+        
+        # List MLflow registered models
+        try:
+            registered_models = client.search_registered_models()
+            for rm in registered_models:
+                for version in client.search_model_versions(f"name='{rm.name}'"):
+                    models.append({
+                        "source": "mlflow",
+                        "name": rm.name,
+                        "version": version.version,
+                        "stage": version.current_stage,
+                        "run_id": version.run_id,
+                        "active": version.current_stage == "Production"
+                    })
+        except Exception as mlflow_err:
+            print(f"MLflow listing error: {mlflow_err}")
+        
+        return jsonify({"models": models})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/models/current')
+def current_model():
+    """Get information about the currently active model."""
+    try:
+        model, threshold = get_production_model()
+        
+        # Determine source
+        model_source = "file" if os.path.exists(PROD_MODEL_PATH) else "mlflow"
+        
+        # Load metadata
+        metadata = {}
+        metadata_path = PROD_MODEL_PATH.replace("model.pkl", "metadata.json")
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+        
+        return jsonify({
+            "model_loaded": model is not None,
+            "source": model_source,
+            "threshold": threshold,
+            "path": PROD_MODEL_PATH if model_source == "file" else None,
+            "metadata": metadata
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/models/deploy', methods=['POST'])
+def deploy_model():
+    """
+    Deploy a specific model version from MLflow to production.
+    This exports the model to prod_models/ directory.
+    
+    Body: {"run_id": "abc123"} or {"model_name": "...", "version": "1"}
+    """
+    try:
+        data = request.get_json()
+        run_id = data.get('run_id')
+        model_name = data.get('model_name', MODEL_NAME)
+        version = data.get('version')
+        
+        if not run_id and not version:
+            return jsonify({"error": "Provide either run_id or version"}), 400
+        
+        # If version provided, get run_id from MLflow
+        if version and not run_id:
+            mv = client.get_model_version(model_name, version)
+            run_id = mv.run_id
+        
+        # Load model from MLflow
+        model_uri = f"runs:/{run_id}/model"
+        model = mlflow.sklearn.load_model(model_uri)
+        
+        # Get run info for metadata
+        run = client.get_run(run_id)
+        threshold = float(run.data.params.get("business_optimal_threshold", 0.45))
+        
+        # Save to prod_models/
+        prod_dir = Path(PROD_MODEL_PATH).parent
+        prod_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Backup current model
+        if os.path.exists(PROD_MODEL_PATH):
+            backup_path = PROD_MODEL_PATH.replace(".pkl", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
+            os.rename(PROD_MODEL_PATH, backup_path)
+        
+        # Save new model
+        with open(PROD_MODEL_PATH, 'wb') as f:
+            pickle.dump(model, f)
+        
+        # Save metadata
+        metadata = {
+            "run_id": run_id,
+            "model_name": model_name,
+            "deployed_at": datetime.now().isoformat(),
+            "optimal_threshold": threshold,
+            "metrics": run.data.metrics,
+            "params": run.data.params
+        }
+        metadata_path = PROD_MODEL_PATH.replace("model.pkl", "metadata.json")
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+        
+        # Save threshold
+        threshold_path = PROD_MODEL_PATH.replace("model.pkl", "threshold.json")
+        with open(threshold_path, 'w') as f:
+            json.dump({"optimal_threshold": threshold}, f, indent=2)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Model {run_id} deployed to production",
+            "metadata": metadata
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
+@app.route('/api/models/rollback', methods=['POST'])
+def rollback_model():
+    """
+    Rollback to a previous model version.
+    Lists available backups and restores the selected one.
+    """
+    try:
+        data = request.get_json() or {}
+        backup_name = data.get('backup')
+        
+        prod_dir = Path(PROD_MODEL_PATH).parent
+        
+        # List backups
+        backups = list(prod_dir.glob("model_backup_*.pkl"))
+        
+        if not backup_name:
+            # Return list of available backups
+            return jsonify({
+                "backups": [
+                    {
+                        "name": b.name,
+                        "created": b.stat().st_mtime
+                    } for b in backups
+                ]
+            })
+        
+        # Restore specific backup
+        backup_path = prod_dir / backup_name
+        if not backup_path.exists():
+            return jsonify({"error": f"Backup not found: {backup_name}"}), 404
+        
+        # Swap current model with backup
+        current_backup = PROD_MODEL_PATH.replace(".pkl", f"_rollback_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
+        if os.path.exists(PROD_MODEL_PATH):
+            os.rename(PROD_MODEL_PATH, current_backup)
+        os.rename(str(backup_path), PROD_MODEL_PATH)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Rolled back to {backup_name}",
+            "previous_saved_as": current_backup
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/health')
