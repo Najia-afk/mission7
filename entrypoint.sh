@@ -1,4 +1,12 @@
 #!/bin/bash
+# =============================================================================
+# Mission7 - Credit Scoring MLOps Platform
+# Copyright (c) 2025-2026 All Rights Reserved.
+# 
+# This software is proprietary and confidential.
+# Commercial use requires a paid license agreement.
+# =============================================================================
+#
 # entrypoint.sh - Production container entrypoint
 # Syncs artifacts to database before starting the API server
 

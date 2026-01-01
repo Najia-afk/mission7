@@ -1,5 +1,9 @@
 # =============================================================================
 # Mission7 - Credit Scoring MLOps Platform
+# Copyright (c) 2025-2026 All Rights Reserved.
+# Commercial use requires a paid license agreement.
+# =============================================================================
+#
 # Python 3.12 Dependencies
 # =============================================================================
 
