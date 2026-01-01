@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit Scoring - Prêt à dépenser | What-if Testing</title>
+    <title>Credit Scoring - PrÃªt Ã  dÃ©penser | What-if Testing</title>
     <meta name="description" content="Backend prediction testing with custom features">
-    
+
     <!-- Modular CSS Architecture -->
     <link rel="stylesheet" href="/static/styles/variables.css">
     <link rel="stylesheet" href="/static/styles/base.css">
@@ -15,12 +15,12 @@
     <link rel="stylesheet" href="/static/styles/components.css">
     <link rel="stylesheet" href="/static/styles/responsive.css">
     <link rel="stylesheet" href="/static/styles/pages/predict.css">
-    
+
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
     <a href="#main-content" class="skip-link">Aller au contenu principal</a>
-    
+
     <div class="app-wrapper">
         <!-- Header -->
         <header>
@@ -30,7 +30,7 @@
                         <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
-                        Prêt à dépenser
+                        PrÃªt Ã  dÃ©penser
                     </a>
                     <div class="nav-links">
                         <a href="/">Home</a>
@@ -74,82 +74,117 @@
         <!-- Main Content -->
         <main id="main-content" class="main-content">
             <div class="container">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Feature Editor</h3>
-                    </div>
-                    <div class="card-body">
-                        <!-- Fetch existing client -->
-                        <div class="flex gap-md mb-lg" style="max-width: 500px;">
-                            <input type="number" class="form-control" id="fetch_id" placeholder="Fetch data for Client ID (optional)">
-                            <button class="btn btn-secondary" type="button" id="fetchBtn">Fetch & Fill</button>
+                <div class="grid grid-2">
+                    <!-- Feature Editor (What-if) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Feature Editor</h3>
                         </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="fetch_id" class="form-label">Client ID (optional)</label>
+                                <div class="flex gap-md" style="max-width: 520px;">
+                                    <input type="number" class="form-control" id="fetch_id" placeholder="Fetch data for Client ID (e.g. 100002)">
+                                    <button class="btn btn-secondary" type="button" id="fetchBtn">Fetch &amp; Fill</button>
+                                </div>
+                                <span class="form-text">Tip: fetch an existing client first to enable Similar Clients &amp; Bi-variate charts.</span>
+                            </div>
 
-                        <form id="whatIfForm">
-                            <div id="formFields" class="form-fields-container">
-                                <div class="text-center p-lg">
-                                    <p>Fetch a client to load their features, or use the simulator for a simplified form.</p>
+                            <form id="whatIfForm">
+                                <div id="formFields" class="form-fields-container">
+                                    <div class="text-center p-lg">
+                                        <p>Fetch a client to load all model features, then edit any field and run the simulation.</p>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-lg w-full mt-lg" id="whatIfSubmitBtn">
+                                    Run Simulation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Model Information -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Model Information</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-md model-info-grid">
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat-model">LightGBM</div>
+                                    <div class="metric-label">Model Type</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat-threshold">0.45</div>
+                                    <div class="metric-label">Threshold</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat-auc">0.76</div>
+                                    <div class="metric-label">AUC-ROC</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value decision-approved" id="stat-status">Active</div>
+                                    <div class="metric-label">Status</div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg w-full mt-lg" id="whatIfSubmitBtn">
-                                Run Simulation
-                            </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
                 <!-- ================================================================== -->
                 <!-- ANALYSIS RESULTS (hidden initially, shown after prediction)       -->
                 <!-- ================================================================== -->
-                <div id="resultCard" class="card result-card hidden animate-fade-in mt-xl" role="region" aria-live="polite">
-                    
+                <div id="analysisResults" class="hidden">
+
                     <!-- Section 1: Score Gauge + Decision -->
-                    <div class="card-header flex justify-between items-center">
-                        <h3 class="card-title">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                            Analysis for Client #<span id="res_client_id"></span>
-                        </h3>
-                        <span class="badge" id="decisionBadge">--</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="grid grid-2 gap-lg">
-                            <!-- Score Gauge -->
-                            <div>
-                                <div id="scoreGauge" style="height: 280px;"></div>
-                                <div class="alert alert-info text-center mt-md">
-                                    Threshold: <strong id="thresholdValue">0.45</strong> | 
-                                    Probability: <strong id="probabilityValue">--</strong>
+                    <div class="card mt-xl">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                Analysis for Client #<span id="res_client_id"></span>
+                            </h3>
+                            <span class="badge" id="decisionBadge">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-lg">
+                                <!-- Score Gauge -->
+                                <div>
+                                    <div id="scoreGauge" style="height: 280px;"></div>
+                                    <div class="alert alert-info text-center mt-md">
+                                        Threshold: <strong id="thresholdValue">0.45</strong> |
+                                        Probability: <strong id="probabilityValue">--</strong>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Client Profile -->
-                            <div>
-                                <h4 style="margin-bottom: 1rem;">Client Profile</h4>
-                                <div class="grid grid-2 gap-sm">
-                                    <div class="metric-box">
-                                        <div class="metric-value" id="profile_income">--</div>
-                                        <div class="metric-label">Annual Income</div>
-                                    </div>
-                                    <div class="metric-box">
-                                        <div class="metric-value" id="profile_credit">--</div>
-                                        <div class="metric-label">Credit Amount</div>
-                                    </div>
-                                    <div class="metric-box">
-                                        <div class="metric-value" id="profile_annuity">--</div>
-                                        <div class="metric-label">Annuity</div>
-                                    </div>
-                                    <div class="metric-box">
-                                        <div class="metric-value" id="profile_age">--</div>
-                                        <div class="metric-label">Age (Years)</div>
-                                    </div>
-                                    <div class="metric-box">
-                                        <div class="metric-value" id="profile_employment">--</div>
-                                        <div class="metric-label">Employment (Years)</div>
-                                    </div>
-                                    <div class="metric-box">
-                                        <div class="metric-value" id="profile_ext2">--</div>
-                                        <div class="metric-label">Ext. Score 2</div>
+                                <!-- Client Profile -->
+                                <div>
+                                    <h4 style="margin-bottom: 1rem;">Client Profile</h4>
+                                    <div class="grid grid-2 gap-sm">
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_income">--</div>
+                                            <div class="metric-label">Annual Income</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_credit">--</div>
+                                            <div class="metric-label">Credit Amount</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_annuity">--</div>
+                                            <div class="metric-label">Annuity</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_age">--</div>
+                                            <div class="metric-label">Age (Years)</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_employment">--</div>
+                                            <div class="metric-label">Employment (Years)</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_ext2">--</div>
+                                            <div class="metric-label">Ext. Score 2</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -157,105 +192,115 @@
                     </div>
 
                     <!-- Section 2: SHAP Explanation -->
-                    <div class="card-body" style="border-top: 1px solid var(--border-color);">
-                        <h4 style="margin-bottom: 1rem;">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:8px;vertical-align:middle">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
-                            </svg>
-                            Decision Transparency (SHAP)
-                            <span class="badge badge-secondary" style="margin-left: 8px;">GDPR Article 22</span>
-                        </h4>
-                        <p class="form-text mb-md">Features pushing towards rejection (red) or acceptance (blue).</p>
-                        <div id="shapPlot" class="shap-container"></div>
+                    <div class="card mt-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                </svg>
+                                Decision Transparency (SHAP)
+                            </h3>
+                            <span class="badge badge-secondary">GDPR Article 22</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="form-text mb-md">Features pushing towards rejection (red) or acceptance (blue). This explanation is required for regulatory compliance.</p>
+                            <div id="shapPlot" class="shap-container"></div>
+                        </div>
                     </div>
 
                     <!-- Section 3: Client Comparison -->
-                    <div class="card-body" style="border-top: 1px solid var(--border-color);">
-                        <h4 style="margin-bottom: 1rem;">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:8px;vertical-align:middle">
-                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                            </svg>
-                            Comparison with Similar Clients
-                        </h4>
-                        <div class="grid grid-3 gap-md mb-lg" id="comparisonStats">
-                            <div class="metric-box">
-                                <div class="metric-value" id="stat_similar_rate">--</div>
-                                <div class="metric-label">Similar Clients Default Rate</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-value" id="stat_pop_rate">--</div>
-                                <div class="metric-label">Population Default Rate</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-value" id="stat_n_similar">--</div>
-                                <div class="metric-label">Similar Clients Found</div>
-                            </div>
+                    <div class="card mt-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                                Comparison with Similar Clients
+                            </h3>
                         </div>
-                        <div class="grid grid-2 gap-lg">
-                            <div id="comparisonBarChart" style="height: 320px;"></div>
-                            <div id="defaultRateComparison" style="height: 320px;"></div>
+                        <div class="card-body">
+                            <div class="grid grid-3 gap-md mb-lg" id="comparisonStats">
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_similar_rate">--</div>
+                                    <div class="metric-label">Similar Clients Default Rate</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_pop_rate">--</div>
+                                    <div class="metric-label">Population Default Rate</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_n_similar">--</div>
+                                    <div class="metric-label">Similar Clients Found</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-2 gap-lg">
+                                <div id="comparisonBarChart" style="height: 320px;"></div>
+                                <div id="defaultRateComparison" style="height: 320px;"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Section 4: Bi-variate Analysis -->
-                    <div class="card-body" style="border-top: 1px solid var(--border-color);">
-                        <div class="flex justify-between items-center mb-md">
-                            <h4 style="margin: 0;">
-                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:8px;vertical-align:middle">
+                    <!-- Section 4: Bi-variate Analysis with Filters -->
+                    <div class="card mt-lg">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
                                     <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
                                 </svg>
                                 Bi-variate Analysis
-                            </h4>
+                            </h3>
                             <span class="badge badge-info">Interactive Filters</span>
                         </div>
-                        
-                        <!-- Feature Filters -->
-                        <div class="grid grid-3 gap-md mb-lg">
-                            <div class="form-group">
-                                <label for="feature_x" class="form-label">X-Axis Feature</label>
-                                <select class="form-control" id="feature_x">
-                                    <option value="AMT_INCOME_TOTAL">Income Total</option>
-                                    <option value="AMT_CREDIT" selected>Credit Amount</option>
-                                    <option value="AMT_ANNUITY">Annuity</option>
-                                    <option value="AMT_GOODS_PRICE">Goods Price</option>
-                                    <option value="DAYS_BIRTH">Age (Days)</option>
-                                    <option value="DAYS_EMPLOYED">Employment (Days)</option>
-                                    <option value="EXT_SOURCE_1">External Source 1</option>
-                                    <option value="EXT_SOURCE_2">External Source 2</option>
-                                    <option value="EXT_SOURCE_3">External Source 3</option>
-                                </select>
+                        <div class="card-body">
+                            <!-- Feature Filters -->
+                            <div class="grid grid-3 gap-md mb-lg">
+                                <div class="form-group">
+                                    <label for="feature_x" class="form-label">X-Axis Feature</label>
+                                    <select class="form-control" id="feature_x">
+                                        <option value="AMT_INCOME_TOTAL">Income Total</option>
+                                        <option value="AMT_CREDIT" selected>Credit Amount</option>
+                                        <option value="AMT_ANNUITY">Annuity</option>
+                                        <option value="AMT_GOODS_PRICE">Goods Price</option>
+                                        <option value="DAYS_BIRTH">Age (Days)</option>
+                                        <option value="DAYS_EMPLOYED">Employment (Days)</option>
+                                        <option value="EXT_SOURCE_1">External Source 1</option>
+                                        <option value="EXT_SOURCE_2">External Source 2</option>
+                                        <option value="EXT_SOURCE_3">External Source 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="feature_y" class="form-label">Y-Axis Feature</label>
+                                    <select class="form-control" id="feature_y">
+                                        <option value="AMT_INCOME_TOTAL" selected>Income Total</option>
+                                        <option value="AMT_CREDIT">Credit Amount</option>
+                                        <option value="AMT_ANNUITY">Annuity</option>
+                                        <option value="AMT_GOODS_PRICE">Goods Price</option>
+                                        <option value="DAYS_BIRTH">Age (Days)</option>
+                                        <option value="DAYS_EMPLOYED">Employment (Days)</option>
+                                        <option value="EXT_SOURCE_1">External Source 1</option>
+                                        <option value="EXT_SOURCE_2">External Source 2</option>
+                                        <option value="EXT_SOURCE_3">External Source 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <button type="button" class="btn btn-primary w-full" onclick="updateBivariateChart()">
+                                        Update Chart
+                                    </button>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="feature_y" class="form-label">Y-Axis Feature</label>
-                                <select class="form-control" id="feature_y">
-                                    <option value="AMT_INCOME_TOTAL" selected>Income Total</option>
-                                    <option value="AMT_CREDIT">Credit Amount</option>
-                                    <option value="AMT_ANNUITY">Annuity</option>
-                                    <option value="AMT_GOODS_PRICE">Goods Price</option>
-                                    <option value="DAYS_BIRTH">Age (Days)</option>
-                                    <option value="DAYS_EMPLOYED">Employment (Days)</option>
-                                    <option value="EXT_SOURCE_1">External Source 1</option>
-                                    <option value="EXT_SOURCE_2">External Source 2</option>
-                                    <option value="EXT_SOURCE_3">External Source 3</option>
-                                </select>
+
+                            <!-- Scatter Plot -->
+                            <div id="bivariateChart" style="height: 400px;"></div>
+
+                            <div class="alert alert-secondary mt-md">
+                                <strong>Legend:</strong>
+                                <span style="color:#22c55e">â— Accepted (No Default)</span> |
+                                <span style="color:#ef4444">â— Rejected (Default)</span> |
+                                <span style="color:#3b82f6">â˜… Current Client</span>
                             </div>
-                            <div class="form-group" style="display:flex;align-items:flex-end;">
-                                <button type="button" class="btn btn-primary w-full" onclick="updateBivariateChart()">
-                                    Update Chart
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Scatter Plot -->
-                        <div id="bivariateChart" style="height: 400px;"></div>
-                        
-                        <div class="alert alert-secondary mt-md text-center">
-                            <strong>Legend:</strong> 
-                            <span style="color:#22c55e">● Accepted (No Default)</span> | 
-                            <span style="color:#ef4444">● Rejected (Default)</span> | 
-                            <span style="color:#3b82f6">★ Current Client</span>
                         </div>
                     </div>
+
                 </div>
             </div>
         </main>
@@ -264,7 +309,7 @@
         <footer>
             <div class="container">
                 <div class="footer-simple">
-                    <p>&copy; 2025 Prêt à dépenser - MLOps Credit Scoring Platform</p>
+                    <p>&copy; 2025 PrÃªt Ã  dÃ©penser - MLOps Credit Scoring Platform</p>
                 </div>
             </div>
         </footer>
@@ -273,14 +318,28 @@
     <script>
         // Global state
         let currentClientId = null;
-        let currentClientData = {};
+        let currentClientData = null;
         let currentPrediction = null;
 
-        // Fetch & Fill
+        // Load model stats on page load
+        fetch('/api/audit/model-governance')
+            .then(r => r.json())
+            .then(data => {
+                if (data.model_identification) {
+                    document.getElementById('stat-model').textContent = data.model_identification.type || 'LightGBM';
+                }
+                if (data.performance_metrics) {
+                    document.getElementById('stat-threshold').textContent = data.performance_metrics.optimal_threshold?.toFixed(2) || '0.45';
+                    document.getElementById('stat-auc').textContent = data.performance_metrics.auc_roc?.toFixed(2) || '0.76';
+                }
+            })
+            .catch(console.error);
+
+        // Fetch & Fill existing client
         document.getElementById('fetchBtn').onclick = async () => {
             const id = document.getElementById('fetch_id').value;
             if (!id) return alert("Please enter a Client ID");
-            
+
             const btn = document.getElementById('fetchBtn');
             btn.disabled = true;
             btn.innerText = 'Fetching...';
@@ -290,11 +349,14 @@
                 const data = await response.json();
                 if (data.error) {
                     alert(data.error);
-                } else {
-                    currentClientData = data;
-                    currentClientId = id;
-                    renderWhatIfForm(data);
+                    return;
                 }
+
+                currentClientId = String(id);
+                currentClientData = data;
+                // Ensure SK_ID_CURR exists in the form payload
+                currentClientData.SK_ID_CURR = Number(id);
+                renderWhatIfForm(currentClientData);
             } catch (err) {
                 alert("Failed to fetch client data");
             } finally {
@@ -307,52 +369,149 @@
             const container = document.getElementById('formFields');
             container.innerHTML = '';
             container.className = 'grid grid-4 gap-md form-fields-container';
-            
+
             const keys = Object.keys(data).sort();
-            
             keys.forEach(key => {
                 if (key === 'TARGET') return;
-                
+
                 const col = document.createElement('div');
                 col.className = 'form-group';
-                
+
                 const label = document.createElement('label');
                 label.className = 'form-label';
                 label.innerText = key;
-                
+
                 const input = document.createElement('input');
                 input.className = 'form-control';
                 input.name = key;
-                input.value = data[key] === null ? '' : data[key];
-                
+                input.value = data[key] === null || data[key] === undefined ? '' : data[key];
+
                 if (typeof data[key] === 'number') {
                     input.type = 'number';
                     input.step = 'any';
                 } else {
                     input.type = 'text';
                 }
-                
+
                 col.appendChild(label);
                 col.appendChild(input);
                 container.appendChild(col);
             });
         }
 
+        // What-if Form Submission
+        document.getElementById('whatIfForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('whatIfSubmitBtn');
+
+            const formData = new FormData(e.target);
+            const features = {};
+            formData.forEach((value, key) => {
+                if (value === '') features[key] = null;
+                else if (!isNaN(value) && value.trim() !== '') features[key] = Number(value);
+                else features[key] = value;
+            });
+
+            const maybeId = features['SK_ID_CURR'];
+            currentClientId = (maybeId !== null && maybeId !== undefined && !isNaN(maybeId)) ? String(Number(maybeId)) : 'WhatIf';
+            currentClientData = features;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Simulating...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_id: currentClientId,
+                        features: features
+                    })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+                currentPrediction = data;
+                await displayAllResults(data, features);
+            } catch (err) {
+                alert("Simulation failed: " + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Run Simulation';
+            }
+        };
+
+        // Display all results
+        async function displayAllResults(predData, features) {
+            const analysisResults = document.getElementById('analysisResults');
+
+            // IMPORTANT: unhide before rendering Plotly charts
+            analysisResults.classList.remove('hidden');
+            await new Promise(requestAnimationFrame);
+
+            // 1. Update client ID and decision badge
+            document.getElementById('res_client_id').textContent = predData.client_id;
+            const decisionBadge = document.getElementById('decisionBadge');
+            decisionBadge.textContent = predData.decision;
+            decisionBadge.className = 'badge ' + (predData.decision === 'ACCEPTED' ? 'badge-success' : 'badge-danger');
+
+            // 2. Render Score Gauge
+            renderScoreGauge(predData);
+
+            // 3. Render Client Profile (from provided features)
+            renderClientProfile(features);
+
+            // 4. Render SHAP
+            renderShap(predData);
+
+            // 5. Render Comparison (requires a real client ID)
+            const numericId = Number(features['SK_ID_CURR']);
+            if (!isNaN(numericId) && numericId > 0) {
+                try {
+                    const similarResponse = await fetch(`/api/client/${numericId}/similar?n_neighbors=20`);
+                    const similarData = await similarResponse.json();
+                    if (similarData.error) throw new Error(similarData.error);
+                    renderComparison(similarData);
+                } catch (e) {
+                    renderComparison({ error: 'Similar client comparison not available. Fetch a real client first.' });
+                }
+            } else {
+                renderComparison({ error: 'Similar client comparison requires a real SK_ID_CURR. Use Fetch & Fill first.' });
+            }
+
+            // 6. Render Bi-variate Chart (requires a real client ID)
+            await updateBivariateChart();
+
+            // Ensure Plotly resizes correctly after becoming visible
+            try {
+                ['scoreGauge', 'comparisonBarChart', 'defaultRateComparison', 'bivariateChart'].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) Plotly.Plots.resize(el);
+                });
+            } catch (e) {
+                // ignore resize errors
+            }
+
+            analysisResults.scrollIntoView({ behavior: 'smooth' });
+        }
+
         // Render score gauge using Plotly
         function renderScoreGauge(predData) {
             const probability = predData.probability;
             const threshold = predData.threshold;
-            
+
             document.getElementById('thresholdValue').textContent = threshold.toFixed(2);
             document.getElementById('probabilityValue').textContent = (probability * 100).toFixed(1) + '%';
-            
+
             const gaugeData = [{
                 type: 'indicator',
                 mode: 'gauge+number+delta',
                 value: probability * 100,
                 title: { text: 'Default Probability (%)', font: { size: 16 } },
-                delta: { 
-                    reference: threshold * 100, 
+                delta: {
+                    reference: threshold * 100,
                     increasing: { color: '#ef4444' },
                     decreasing: { color: '#22c55e' }
                 },
@@ -367,7 +526,7 @@
                         { range: [threshold * 100, 100], color: 'rgba(239, 68, 68, 0.2)' }
                     ],
                     threshold: {
-                        line: { color: '#1e40af', width: 4 },
+                        line: { color: '#1e293b', width: 4 },
                         thickness: 0.75,
                         value: threshold * 100
                     }
@@ -380,7 +539,7 @@
                 font: { color: '#334155', family: 'Inter, sans-serif' }
             };
 
-            Plotly.newPlot('scoreGauge', gaugeData, layout, {responsive: true});
+            Plotly.newPlot('scoreGauge', gaugeData, layout, { responsive: true });
         }
 
         // Render client profile
@@ -389,16 +548,17 @@
             document.getElementById('profile_credit').textContent = formatCurrency(clientData.AMT_CREDIT);
             document.getElementById('profile_annuity').textContent = formatCurrency(clientData.AMT_ANNUITY);
             document.getElementById('profile_age').textContent = clientData.DAYS_BIRTH ? Math.floor(-clientData.DAYS_BIRTH / 365) : '--';
-            document.getElementById('profile_employment').textContent = clientData.DAYS_EMPLOYED ? 
+            document.getElementById('profile_employment').textContent = clientData.DAYS_EMPLOYED ?
                 (clientData.DAYS_EMPLOYED > 0 ? 'Retired' : Math.floor(-clientData.DAYS_EMPLOYED / 365)) : '--';
-            document.getElementById('profile_ext2').textContent = clientData.EXT_SOURCE_2 ? 
-                clientData.EXT_SOURCE_2.toFixed(3) : '--';
+            document.getElementById('profile_ext2').textContent = clientData.EXT_SOURCE_2 ?
+                Number(clientData.EXT_SOURCE_2).toFixed(3) : '--';
         }
 
         // Render SHAP explanation
         function renderShap(predData) {
             document.getElementById('shapPlot').innerHTML = predData.shap_html || '<p>SHAP explanation not available.</p>';
-            
+
+            // Execute Plotly scripts if present
             const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
             for (let script of scripts) {
                 const newScript = document.createElement("script");
@@ -410,29 +570,34 @@
         // Render comparison charts
         function renderComparison(similarData) {
             if (similarData.error) {
-                document.getElementById('comparisonStats').innerHTML = 
-                    `<div class="alert alert-warning" style="grid-column: span 3;">Comparison data not available: ${similarData.error}</div>`;
+                document.getElementById('comparisonStats').innerHTML =
+                    `<div class="alert alert-warning" style="grid-column: span 3;">${similarData.error}</div>`;
+                document.getElementById('comparisonBarChart').innerHTML = '';
+                document.getElementById('defaultRateComparison').innerHTML = '';
                 return;
             }
-            
+
+            // Update stats
             document.getElementById('stat_similar_rate').textContent = similarData.similar_default_rate + '%';
             document.getElementById('stat_pop_rate').textContent = similarData.population_default_rate + '%';
             document.getElementById('stat_n_similar').textContent = similarData.n_similar;
-            
+
+            // Bar chart comparing client vs similar vs population
             const stats = similarData.comparison_stats;
             const features = Object.keys(stats).filter(f => stats[f].client_value !== null);
-            
+
             const clientValues = features.map(f => stats[f].client_value);
             const similarValues = features.map(f => stats[f].similar_mean);
             const popValues = features.map(f => stats[f].population_mean);
-            
-            const normalizedClient = features.map((f, i) => 
+
+            // Normalize for comparison
+            const normalizedClient = features.map((f, i) =>
                 popValues[i] ? (clientValues[i] / popValues[i] * 100).toFixed(1) : 0
             );
-            const normalizedSimilar = features.map((f, i) => 
+            const normalizedSimilar = features.map((f, i) =>
                 popValues[i] ? (similarValues[i] / popValues[i] * 100).toFixed(1) : 0
             );
-            
+
             const barData = [
                 { x: features.map(formatFeatureName), y: normalizedClient, name: 'Current Client', type: 'bar', marker: { color: '#3b82f6' } },
                 { x: features.map(formatFeatureName), y: normalizedSimilar, name: 'Similar Clients', type: 'bar', marker: { color: '#8b5cf6' } },
@@ -451,8 +616,9 @@
                 yaxis: { title: '%' }
             };
 
-            Plotly.newPlot('comparisonBarChart', barData, barLayout, {responsive: true});
-            
+            Plotly.newPlot('comparisonBarChart', barData, barLayout, { responsive: true });
+
+            // Default rate comparison donut charts
             const pieData = [{
                 values: [similarData.similar_default_rate, 100 - similarData.similar_default_rate],
                 labels: ['Default', 'No Default'],
@@ -483,33 +649,28 @@
                 showlegend: false
             };
 
-            Plotly.newPlot('defaultRateComparison', pieData, pieLayout, {responsive: true});
+            Plotly.newPlot('defaultRateComparison', pieData, pieLayout, { responsive: true });
         }
 
         // Update bi-variate scatter plot
         async function updateBivariateChart() {
+            const numericId = Number(currentClientId);
+            if (isNaN(numericId) || numericId <= 0) {
+                document.getElementById('bivariateChart').innerHTML =
+                    `<div class="alert alert-warning">Bi-variate chart requires a real client ID. Use Fetch &amp; Fill first.</div>`;
+                return;
+            }
+
             const featureX = document.getElementById('feature_x').value;
             const featureY = document.getElementById('feature_y').value;
-            const clientId = currentClientId || 0;
-            
+
             try {
-                const response = await fetch(`/api/analysis/bivariate?feature_x=${featureX}&feature_y=${featureY}&client_id=${clientId}&sample_size=1500`);
+                const response = await fetch(`/api/analysis/bivariate?feature_x=${featureX}&feature_y=${featureY}&client_id=${numericId}&sample_size=1500`);
                 const data = await response.json();
-                
                 if (data.error) {
                     document.getElementById('bivariateChart').innerHTML = `<div class="alert alert-warning">Error: ${data.error}</div>`;
                     return;
                 }
-                
-                // Add current client point if we have features
-                if (currentClientData && Object.keys(currentClientData).length > 0) {
-                    data.highlight = {
-                        x: currentClientData[featureX],
-                        y: currentClientData[featureY],
-                        client_id: currentClientId
-                    };
-                }
-                
                 renderBivariateChart(data);
             } catch (err) {
                 console.error('Bivariate fetch error:', err);
@@ -536,7 +697,7 @@
                     hoverinfo: 'text+x+y'
                 }
             ];
-            
+
             if (data.highlight && data.highlight.x !== null && data.highlight.y !== null) {
                 traces.push({
                     x: [data.highlight.x], y: [data.highlight.y],
@@ -560,7 +721,7 @@
                 hovermode: 'closest'
             };
 
-            Plotly.newPlot('bivariateChart', traces, layout, {responsive: true});
+            Plotly.newPlot('bivariateChart', traces, layout, { responsive: true });
         }
 
         // Utility functions
@@ -578,99 +739,31 @@
             return nameMap[feature] || feature;
         }
 
-        // Display all results
-        async function displayAllResults(predData, features) {
-            const resultCard = document.getElementById('resultCard');
-            
-            // Update client ID and decision badge
-            document.getElementById('res_client_id').textContent = predData.client_id;
-            const decisionBadge = document.getElementById('decisionBadge');
-            decisionBadge.textContent = predData.decision;
-            decisionBadge.className = 'badge ' + (predData.decision === 'ACCEPTED' ? 'badge-success' : 'badge-danger');
-            
-            // 1. Render Score Gauge
-            renderScoreGauge(predData);
-            
-            // 2. Render Client Profile
-            renderClientProfile(features);
-            
-            // 3. Render SHAP
-            renderShap(predData);
-            
-            // 4. Try to get similar clients comparison
-            try {
-                const clientId = features['SK_ID_CURR'] || 0;
-                if (clientId && clientId !== 'WhatIf') {
-                    const similarResponse = await fetch(`/api/client/${clientId}/similar?n_neighbors=20`);
-                    const similarData = await similarResponse.json();
-                    renderComparison(similarData);
-                } else {
-                    renderComparison({ error: 'What-if mode - no database lookup' });
-                }
-            } catch (err) {
-                renderComparison({ error: 'Comparison data unavailable' });
-            }
-            
-            // 5. Render Bi-variate Chart
-            await updateBivariateChart();
-            
-            // Show result card
-            resultCard.classList.remove('hidden');
-            resultCard.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // What-if Form Submission
-        document.getElementById('whatIfForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('whatIfSubmitBtn');
-            const formData = new FormData(e.target);
-            const features = {};
-            
-            formData.forEach((value, key) => {
-                if (value === '') features[key] = null;
-                else if (!isNaN(value) && value.trim() !== '') features[key] = Number(value);
-                else features[key] = value;
-            });
-
-            // Store for charts
-            currentClientId = features['SK_ID_CURR'] || 'WhatIf';
-            currentClientData = features;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Simulating...';
-
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        client_id: currentClientId,
-                        features: features
-                    })
-                });
-                const data = await response.json();
-                if (data.error) alert("Error: " + data.error);
-                else await displayAllResults(data, features);
-            } catch (err) {
-                alert("Simulation failed: " + err);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Run Simulation';
-            }
-        };
-
         function toggleMobileMenu() {
             document.querySelector('.nav-links').classList.toggle('active');
         }
     </script>
-    
+
     <style>
-        .metric-box { background: var(--bg-tertiary, #f8fafc); padding: var(--space-md, 1rem); border-radius: var(--radius-md, 0.5rem); text-align: center; }
-        .metric-box .metric-value { font-size: 1.25rem; font-weight: 700; color: var(--primary, #3b82f6); }
-        .metric-box .metric-label { font-size: 0.75rem; color: var(--text-muted, #64748b); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
-        .badge-success { background: #22c55e; color: white; }
-        .badge-danger { background: #ef4444; color: white; }
-        .badge-secondary { background: var(--bg-tertiary, #f1f5f9); color: var(--text-secondary, #64748b); }
+        /* Analysis section specific styles */
+        .metric-box {
+            background: var(--bg-tertiary);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        .metric-box .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .metric-box .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+        /* Model info card - larger display */
+        .model-info-grid .metric-box .metric-value { font-size: 1.25rem; }
+
+        .badge-success { background: var(--success); color: white; }
+        .badge-danger { background: var(--danger); color: white; }
+        .badge-secondary { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .alert-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </body>
 </html>

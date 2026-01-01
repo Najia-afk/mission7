@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/styles/footer.css">
     <link rel="stylesheet" href="/static/styles/components.css">
     <link rel="stylesheet" href="/static/styles/responsive.css">
+    <link rel="stylesheet" href="/static/styles/pages/predict.css">
     
     <!-- Bootstrap Icons (for tooltips/icons) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -178,9 +179,9 @@
         }
 
         .metric-value {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--primary);
             line-height: 1.2;
         }
 
@@ -195,10 +196,33 @@
         .decision-value.REJECTED { color: var(--danger); }
 
         .tooltip-icon {
-            color: var(--text-muted);
-            margin-left: 4px;
+            color: var(--primary);
+            margin-left: 6px;
             cursor: help;
+            font-size: 0.85rem;
+            opacity: 0.7;
+            transition: opacity 0.2s, color 0.2s, transform 0.2s;
         }
+        .tooltip-icon:hover {
+            opacity: 1;
+            color: var(--primary-dark);
+            transform: scale(1.1);
+        }
+        /* Bootstrap tooltip overrides */
+        .tooltip .tooltip-inner {
+            background-color: #1e293b;
+            color: white;
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            border-radius: 6px;
+            max-width: 250px;
+            text-align: left;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .tooltip.bs-tooltip-top .tooltip-arrow::before { border-top-color: #1e293b; }
+        .tooltip.bs-tooltip-bottom .tooltip-arrow::before { border-bottom-color: #1e293b; }
+        .tooltip.bs-tooltip-start .tooltip-arrow::before { border-left-color: #1e293b; }
+        .tooltip.bs-tooltip-end .tooltip-arrow::before { border-right-color: #1e293b; }
     </style>
 </head>
 <body>
@@ -382,160 +406,173 @@
                 <!-- ================================================================== -->
                 <!-- ANALYSIS RESULTS (hidden initially, shown after simulation)       -->
                 <!-- ================================================================== -->
-                <div id="resultCard" class="simulator-card result-card">
+                <div id="analysisResults" class="hidden">
                     
                     <!-- Section 1: Score Gauge + Decision -->
-                    <div class="result-header">
-                        <h3 style="margin: 0;">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                            Analysis for Simulation #<span id="res_client_id"></span>
-                        </h3>
-                        <span class="badge" id="decisionBadge" style="font-size: 0.9rem; padding: 0.5rem 1rem;">--</span>
-                    </div>
-                    
-                    <div class="simulator-grid" style="margin-top: var(--spacing-lg);">
-                        <!-- Score Gauge -->
-                        <div>
-                            <div id="scoreGauge" style="height: 280px;"></div>
-                            <div class="alert alert-light border text-center" style="background: var(--info-bg); color: var(--info); border-color: var(--info) !important; margin-top: var(--spacing-md);">
-                                Threshold: <strong id="thresholdValue">0.45</strong> | 
-                                Probability: <strong id="probabilityValue">--</strong>
-                            </div>
+                    <div class="card mt-xl">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                Analysis for Simulation #<span id="res_client_id"></span>
+                            </h3>
+                            <span class="badge" id="decisionBadge">--</span>
                         </div>
-                        <!-- Input Summary -->
-                        <div>
-                            <h4 style="margin-bottom: 1rem; font-size: 1.1rem;">Simulation Profile</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm);">
-                                <div class="metric-box">
-                                    <div class="metric-value" id="profile_income">--</div>
-                                    <div class="metric-label">Annual Income</div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-lg">
+                                <!-- Score Gauge -->
+                                <div>
+                                    <div id="scoreGauge" style="height: 280px;"></div>
+                                    <div class="alert alert-info text-center mt-md">
+                                        Threshold: <strong id="thresholdValue">0.45</strong> | 
+                                        Probability: <strong id="probabilityValue">--</strong>
+                                    </div>
                                 </div>
-                                <div class="metric-box">
-                                    <div class="metric-value" id="profile_credit">--</div>
-                                    <div class="metric-label">Credit Amount</div>
-                                </div>
-                                <div class="metric-box">
-                                    <div class="metric-value" id="profile_age">--</div>
-                                    <div class="metric-label">Age (Years)</div>
-                                </div>
-                                <div class="metric-box">
-                                    <div class="metric-value" id="profile_employment">--</div>
-                                    <div class="metric-label">Employment (Years)</div>
-                                </div>
-                                <div class="metric-box">
-                                    <div class="metric-value" id="profile_ext2">--</div>
-                                    <div class="metric-label">Ext. Score 2</div>
-                                </div>
-                                <div class="metric-box">
-                                    <div class="metric-value" id="profile_ext3">--</div>
-                                    <div class="metric-label">Ext. Score 3</div>
+                                <!-- Client Profile -->
+                                <div>
+                                    <h4 style="margin-bottom: 1rem;">Simulation Profile</h4>
+                                    <div class="grid grid-2 gap-sm">
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_income">--</div>
+                                            <div class="metric-label">Annual Income</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_credit">--</div>
+                                            <div class="metric-label">Credit Amount</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_annuity">--</div>
+                                            <div class="metric-label">Annuity</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_age">--</div>
+                                            <div class="metric-label">Age (Years)</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_employment">--</div>
+                                            <div class="metric-label">Employment (Years)</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_ext2">--</div>
+                                            <div class="metric-label">Ext. Score 2</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Section 2: SHAP Explanation -->
-                    <div style="margin-top: var(--spacing-xl); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-light);">
-                        <h4 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: var(--spacing-md);">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:8px;vertical-align:middle">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
-                            </svg>
-                            Decision Transparency (SHAP)
-                            <span class="badge bg-secondary" style="font-size: 0.7rem; margin-left: 8px;">GDPR Article 22</span>
-                        </h4>
-                        <p class="text-muted small" style="margin-bottom: var(--spacing-md);">Features pushing towards rejection (red) or acceptance (blue). This explanation is required for regulatory compliance.</p>
-                        <div id="shapPlot" class="border rounded p-2 bg-white"></div>
-                    </div>
-
-                    <!-- Section 3: Population Comparison -->
-                    <div style="margin-top: var(--spacing-xl); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-light);">
-                        <h4 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: var(--spacing-md);">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:8px;vertical-align:middle">
-                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                            </svg>
-                            Comparison with Population
-                        </h4>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);" id="comparisonStats">
-                            <div class="metric-box">
-                                <div class="metric-value" id="stat_similar_rate">--</div>
-                                <div class="metric-label">Similar Profiles Default Rate</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-value" id="stat_pop_rate">--</div>
-                                <div class="metric-label">Population Default Rate</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-value" id="stat_n_similar">--</div>
-                                <div class="metric-label">Similar Profiles Found</div>
-                            </div>
+                    <div class="card mt-lg">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                </svg>
+                                Decision Transparency (SHAP)
+                            </h3>
+                            <span class="badge badge-secondary">GDPR Article 22</span>
                         </div>
-                        <div class="simulator-grid">
-                            <div id="comparisonBarChart" style="height: 320px;"></div>
-                            <div id="defaultRateComparison" style="height: 320px;"></div>
+                        <div class="card-body">
+                            <p class="form-text mb-md">Features pushing towards rejection (red) or acceptance (blue). This explanation is required for regulatory compliance.</p>
+                            <div id="shapPlot" class="shap-container"></div>
                         </div>
                     </div>
 
-                    <!-- Section 4: Bi-variate Analysis -->
-                    <div style="margin-top: var(--spacing-xl); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-light);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
-                            <h4 style="font-size: 1.1rem; color: var(--text-primary); margin: 0;">
-                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:8px;vertical-align:middle">
+                    <!-- Section 3: Client Comparison -->
+                    <div class="card mt-lg">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                                Comparison with Similar Clients
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-3 gap-md mb-lg" id="comparisonStats">
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_similar_rate">--</div>
+                                    <div class="metric-label">Similar Clients Default Rate</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_pop_rate">--</div>
+                                    <div class="metric-label">Population Default Rate</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_n_similar">--</div>
+                                    <div class="metric-label">Similar Clients Found</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-2 gap-lg">
+                                <div id="comparisonBarChart" style="height: 320px;"></div>
+                                <div id="defaultRateComparison" style="height: 320px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Bi-variate Analysis with Filters -->
+                    <div class="card mt-lg">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
                                     <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
                                 </svg>
                                 Bi-variate Analysis
-                            </h4>
-                            <span class="badge bg-secondary" style="font-size: 0.7rem;">Interactive Filters</span>
+                            </h3>
+                            <span class="badge badge-info">Interactive Filters</span>
                         </div>
-                        
-                        <!-- Feature Filters -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
-                            <div class="form-group">
-                                <label class="form-label">X-Axis Feature</label>
-                                <select class="form-control" id="feature_x">
-                                    <option value="AMT_INCOME_TOTAL">Income Total</option>
-                                    <option value="AMT_CREDIT" selected>Credit Amount</option>
-                                    <option value="AMT_ANNUITY">Annuity</option>
-                                    <option value="AMT_GOODS_PRICE">Goods Price</option>
-                                    <option value="DAYS_BIRTH">Age (Days)</option>
-                                    <option value="DAYS_EMPLOYED">Employment (Days)</option>
-                                    <option value="EXT_SOURCE_1">External Source 1</option>
-                                    <option value="EXT_SOURCE_2">External Source 2</option>
-                                    <option value="EXT_SOURCE_3">External Source 3</option>
-                                </select>
+                        <div class="card-body">
+                            <!-- Feature Filters -->
+                            <div class="grid grid-3 gap-md mb-lg">
+                                <div class="form-group">
+                                    <label for="feature_x" class="form-label">X-Axis Feature</label>
+                                    <select class="form-control" id="feature_x">
+                                        <option value="AMT_INCOME_TOTAL">Income Total</option>
+                                        <option value="AMT_CREDIT" selected>Credit Amount</option>
+                                        <option value="AMT_ANNUITY">Annuity</option>
+                                        <option value="AMT_GOODS_PRICE">Goods Price</option>
+                                        <option value="DAYS_BIRTH">Age (Days)</option>
+                                        <option value="DAYS_EMPLOYED">Employment (Days)</option>
+                                        <option value="EXT_SOURCE_1">External Source 1</option>
+                                        <option value="EXT_SOURCE_2">External Source 2</option>
+                                        <option value="EXT_SOURCE_3">External Source 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="feature_y" class="form-label">Y-Axis Feature</label>
+                                    <select class="form-control" id="feature_y">
+                                        <option value="AMT_INCOME_TOTAL" selected>Income Total</option>
+                                        <option value="AMT_CREDIT">Credit Amount</option>
+                                        <option value="AMT_ANNUITY">Annuity</option>
+                                        <option value="AMT_GOODS_PRICE">Goods Price</option>
+                                        <option value="DAYS_BIRTH">Age (Days)</option>
+                                        <option value="DAYS_EMPLOYED">Employment (Days)</option>
+                                        <option value="EXT_SOURCE_1">External Source 1</option>
+                                        <option value="EXT_SOURCE_2">External Source 2</option>
+                                        <option value="EXT_SOURCE_3">External Source 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <button type="button" class="btn btn-primary w-full" onclick="updateBivariateChart()">
+                                        Update Chart
+                                    </button>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Y-Axis Feature</label>
-                                <select class="form-control" id="feature_y">
-                                    <option value="AMT_INCOME_TOTAL" selected>Income Total</option>
-                                    <option value="AMT_CREDIT">Credit Amount</option>
-                                    <option value="AMT_ANNUITY">Annuity</option>
-                                    <option value="AMT_GOODS_PRICE">Goods Price</option>
-                                    <option value="DAYS_BIRTH">Age (Days)</option>
-                                    <option value="DAYS_EMPLOYED">Employment (Days)</option>
-                                    <option value="EXT_SOURCE_1">External Source 1</option>
-                                    <option value="EXT_SOURCE_2">External Source 2</option>
-                                    <option value="EXT_SOURCE_3">External Source 3</option>
-                                </select>
+                            
+                            <!-- Scatter Plot -->
+                            <div id="bivariateChart" style="height: 400px;"></div>
+                            
+                            <div class="alert alert-secondary mt-md">
+                                <strong>Legend:</strong> 
+                                <span style="color:#22c55e">● Accepted (No Default)</span> | 
+                                <span style="color:#ef4444">● Rejected (Default)</span> | 
+                                <span style="color:#3b82f6">★ Current Client</span>
                             </div>
-                            <div class="form-group" style="display:flex;align-items:flex-end;">
-                                <button type="button" class="btn-simulate" style="padding: 0.6rem 1.5rem; font-size: 0.9rem;" onclick="updateBivariateChart()">
-                                    Update Chart
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Scatter Plot -->
-                        <div id="bivariateChart" style="height: 400px;"></div>
-                        
-                        <div class="alert alert-light border text-center" style="margin-top: var(--spacing-md); background: var(--bg-secondary);">
-                            <strong>Legend:</strong> 
-                            <span style="color:#22c55e">● Accepted (No Default)</span> | 
-                            <span style="color:#ef4444">● Rejected (Default)</span> | 
-                            <span style="color:#3b82f6">★ Your Simulation</span>
                         </div>
                     </div>
+
                 </div>
             </div>
         </main>
@@ -566,7 +603,7 @@
         }
 
         function resetForm() {
-            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('analysisResults').classList.add('hidden');
             currentSimulationId = null;
             currentFeatures = null;
         }
@@ -600,7 +637,7 @@
                         { range: [threshold * 100, 100], color: 'rgba(239, 68, 68, 0.2)' }
                     ],
                     threshold: {
-                        line: { color: '#1e40af', width: 4 },
+                        line: { color: '#1e293b', width: 4 },
                         thickness: 0.75,
                         value: threshold * 100
                     }
@@ -620,13 +657,12 @@
         function renderSimulationProfile(features) {
             document.getElementById('profile_income').textContent = formatCurrency(features.AMT_INCOME_TOTAL);
             document.getElementById('profile_credit').textContent = formatCurrency(features.AMT_CREDIT);
+            document.getElementById('profile_annuity').textContent = formatCurrency(features.AMT_ANNUITY);
             document.getElementById('profile_age').textContent = features.DAYS_BIRTH ? Math.floor(-features.DAYS_BIRTH / 365) : '--';
             document.getElementById('profile_employment').textContent = features.DAYS_EMPLOYED ? 
                 (features.DAYS_EMPLOYED > 0 ? 'Retired' : Math.floor(-features.DAYS_EMPLOYED / 365)) : '--';
             document.getElementById('profile_ext2').textContent = features.EXT_SOURCE_2 ? 
                 features.EXT_SOURCE_2.toFixed(3) : '--';
-            document.getElementById('profile_ext3').textContent = features.EXT_SOURCE_3 ? 
-                features.EXT_SOURCE_3.toFixed(3) : '--';
         }
 
         // Render SHAP explanation
@@ -641,15 +677,53 @@
             }
         }
 
-        // Render comparison charts (population stats)
+        // Render comparison charts (population stats for simulation mode)
         function renderComparison(similarData) {
-            if (similarData.error) {
-                document.getElementById('comparisonStats').innerHTML = 
-                    `<div class="alert alert-warning" style="grid-column: span 3;">Comparison data not available: ${similarData.error}</div>`;
+            if (similarData.error || similarData.simulation_mode) {
+                // Simulation mode - show population stats only with friendly message
+                document.getElementById('stat_similar_rate').textContent = '--';
+                document.getElementById('stat_pop_rate').textContent = '8.1%';
+                document.getElementById('stat_n_similar').textContent = '--';
+                
+                // Show info message instead of error
+                const statsContainer = document.getElementById('comparisonStats');
+                statsContainer.innerHTML = `
+                    <div class="alert alert-light border" style="grid-column: span 3; text-align: center; background: var(--bg-secondary);">
+                        <i class="bi bi-info-circle"></i> <strong>Simulation Mode</strong><br>
+                        <small class="text-muted">Similar client comparison is not available for simulations. Population default rate: <strong>8.1%</strong></small>
+                    </div>
+                `;
+                
+                // Show only population donut chart
+                const pieData = [{
+                    values: [8.1, 91.9],
+                    labels: ['Default', 'No Default'],
+                    type: 'pie',
+                    marker: { colors: ['#ef4444', '#22c55e'] },
+                    textinfo: 'percent',
+                    hole: 0.5
+                }];
+
+                const pieLayout = {
+                    title: 'Population Default Rate',
+                    margin: { t: 40, r: 20, l: 20, b: 20 },
+                    paper_bgcolor: 'transparent',
+                    font: { color: '#334155', family: 'Inter, sans-serif' },
+                    showlegend: true
+                };
+
+                Plotly.newPlot('defaultRateComparison', pieData, pieLayout, {responsive: true});
+                
+                // Hide bar chart container
+                document.getElementById('comparisonBarChart').innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">
+                        <p><i class="bi bi-bar-chart"></i> Feature comparison requires a real client ID</p>
+                    </div>
+                `;
                 return;
             }
             
-            // Update stats
+            // Real client comparison (should not happen in simulator, but kept for consistency)
             document.getElementById('stat_similar_rate').textContent = similarData.similar_default_rate + '%';
             document.getElementById('stat_pop_rate').textContent = similarData.population_default_rate + '%';
             document.getElementById('stat_n_similar').textContent = similarData.n_similar;
@@ -817,15 +891,18 @@
 
         // Display all results
         async function displayAllResults(predData, features) {
-            const resultCard = document.getElementById('resultCard');
+            const analysisResults = document.getElementById('analysisResults');
+
+            // IMPORTANT: unhide before rendering Plotly charts
+            // Plotly computes sizes based on visible container dimensions.
+            analysisResults.classList.remove('hidden');
+            await new Promise(requestAnimationFrame);
             
             // Update client ID and decision badge
             document.getElementById('res_client_id').textContent = predData.client_id;
             const decisionBadge = document.getElementById('decisionBadge');
             decisionBadge.textContent = predData.decision;
             decisionBadge.className = 'badge ' + (predData.decision === 'ACCEPTED' ? 'badge-success' : 'badge-danger');
-            decisionBadge.style.backgroundColor = predData.decision === 'ACCEPTED' ? '#22c55e' : '#ef4444';
-            decisionBadge.style.color = 'white';
             
             // 1. Render Score Gauge
             renderScoreGauge(predData);
@@ -836,28 +913,24 @@
             // 3. Render SHAP
             renderShap(predData);
             
-            // 4. Try to get similar clients comparison (may not work for simulations without real SK_ID_CURR)
-            try {
-                const similarResponse = await fetch(`/api/client/999999/similar?n_neighbors=20`);
-                const similarData = await similarResponse.json();
-                renderComparison(similarData);
-            } catch (err) {
-                // If comparison fails, show population stats only
-                renderComparison({
-                    similar_default_rate: 8.1,
-                    population_default_rate: 8.1,
-                    n_similar: '--',
-                    comparison_stats: {},
-                    error: 'Simulation mode - no database lookup'
-                });
-            }
+            // 4. For simulations, show population stats only (no similar client lookup)
+            // Simulations use dummy ID 999999 which won't exist in database
+            renderComparison({ simulation_mode: true });
             
             // 5. Render Bi-variate Chart
             await updateBivariateChart();
-            
-            // Show result card
-            resultCard.style.display = 'block';
-            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Ensure Plotly resizes correctly after becoming visible
+            try {
+                ['scoreGauge', 'comparisonBarChart', 'defaultRateComparison', 'bivariateChart'].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) Plotly.Plots.resize(el);
+                });
+            } catch (e) {
+                // ignore resize errors
+            }
+
+            analysisResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         // End-user Simulator Submission
@@ -924,6 +997,10 @@
     <style>
         .badge-success { background-color: #22c55e; color: white; }
         .badge-danger { background-color: #ef4444; color: white; }
+        .badge-secondary { background: var(--bg-tertiary, #f1f5f9); color: var(--text-secondary, #64748b); }
+        .alert-secondary { background: var(--bg-tertiary, #f8fafc); color: var(--text-secondary, #64748b); border: 1px solid var(--border-color, #e2e8f0); }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </body>
 </html>
