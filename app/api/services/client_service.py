@@ -150,3 +150,201 @@ class ClientService:
             return {"error": f"Client {client_id} not found"}
         
         return self.format_client_for_display(client_data)
+    
+    def get_similar_clients(self, client_id: int, n_neighbors: int = 10) -> dict:
+        """
+        Find similar clients for comparison analysis.
+        
+        Uses key numeric features to find nearest neighbors in the dataset.
+        
+        Args:
+            client_id: Reference client SK_ID_CURR
+            n_neighbors: Number of similar clients to return
+            
+        Returns:
+            Dict with reference client and similar clients data
+        """
+        from app.utils.database import get_postgres_engine
+        from sqlalchemy import text
+        import numpy as np
+        
+        # Key features for similarity comparison
+        comparison_features = [
+            'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE',
+            'DAYS_BIRTH', 'DAYS_EMPLOYED', 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3'
+        ]
+        
+        # Get reference client
+        ref_client = self.get_client(client_id)
+        if not ref_client:
+            return {"error": f"Client {client_id} not found"}
+        
+        try:
+            engine = get_postgres_engine()
+            with engine.connect() as conn:
+                # Get sample of clients for comparison (limit for performance)
+                query = text(f'''
+                    SELECT "SK_ID_CURR", "TARGET", 
+                           "AMT_INCOME_TOTAL", "AMT_CREDIT", "AMT_ANNUITY", "AMT_GOODS_PRICE",
+                           "DAYS_BIRTH", "DAYS_EMPLOYED", 
+                           "EXT_SOURCE_1", "EXT_SOURCE_2", "EXT_SOURCE_3"
+                    FROM application_train
+                    WHERE "SK_ID_CURR" != :client_id
+                    ORDER BY RANDOM()
+                    LIMIT 5000
+                ''')
+                result = conn.execute(query, {"client_id": client_id})
+                rows = result.fetchall()
+                
+                if not rows:
+                    return {"error": "No comparison data available"}
+                
+                # Build comparison matrix
+                df_compare = pd.DataFrame(rows, columns=['SK_ID_CURR', 'TARGET'] + comparison_features)
+                
+                # Normalize features for distance calculation
+                ref_values = []
+                for feat in comparison_features:
+                    ref_values.append(ref_client.get(feat, np.nan))
+                ref_values = np.array(ref_values, dtype=float)
+                
+                # Calculate distances (ignoring NaN)
+                distances = []
+                for _, row in df_compare.iterrows():
+                    compare_values = row[comparison_features].values.astype(float)
+                    
+                    # Calculate normalized Euclidean distance
+                    valid_mask = ~(np.isnan(ref_values) | np.isnan(compare_values))
+                    if valid_mask.sum() > 0:
+                        diff = (ref_values[valid_mask] - compare_values[valid_mask])
+                        # Normalize by feature range to prevent dominance
+                        feat_std = df_compare[comparison_features].std()
+                        norm_diff = diff / (feat_std[valid_mask].values + 1e-8)
+                        dist = np.sqrt(np.sum(norm_diff ** 2))
+                    else:
+                        dist = np.inf
+                    distances.append(dist)
+                
+                df_compare['distance'] = distances
+                similar = df_compare.nsmallest(n_neighbors, 'distance')
+                
+                # Calculate statistics for comparison
+                comparison_stats = {}
+                for feat in comparison_features:
+                    ref_val = ref_client.get(feat)
+                    if ref_val is not None and not pd.isna(ref_val):
+                        similar_mean = similar[feat].mean()
+                        all_mean = df_compare[feat].mean()
+                        comparison_stats[feat] = {
+                            'client_value': float(ref_val),
+                            'similar_mean': float(similar_mean) if not pd.isna(similar_mean) else None,
+                            'population_mean': float(all_mean) if not pd.isna(all_mean) else None
+                        }
+                
+                # Calculate default rate comparison
+                ref_target = ref_client.get('TARGET', None)
+                similar_default_rate = similar['TARGET'].mean() * 100
+                population_default_rate = df_compare['TARGET'].mean() * 100
+                
+                return {
+                    'client_id': client_id,
+                    'client_target': int(ref_target) if ref_target is not None else None,
+                    'n_similar': n_neighbors,
+                    'comparison_stats': comparison_stats,
+                    'similar_clients': similar[['SK_ID_CURR', 'TARGET', 'distance']].to_dict('records'),
+                    'similar_default_rate': round(similar_default_rate, 2),
+                    'population_default_rate': round(population_default_rate, 2)
+                }
+                
+        except Exception as e:
+            logger.error(f"Error finding similar clients: {e}")
+            return {"error": str(e)}
+    
+    def get_bivariate_data(self, feature_x: str, feature_y: str, client_id: Optional[int] = None, sample_size: int = 1000) -> dict:
+        """
+        Get data for bi-variate analysis scatter plots.
+        
+        Args:
+            feature_x: Feature for X axis
+            feature_y: Feature for Y axis  
+            client_id: Optional client to highlight
+            sample_size: Number of samples to return
+            
+        Returns:
+            Dict with scatter plot data points
+        """
+        from app.utils.database import get_postgres_engine
+        from sqlalchemy import text
+        
+        # Validate features are in allowed list
+        allowed_features = [
+            'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE',
+            'DAYS_BIRTH', 'DAYS_EMPLOYED', 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3',
+            'CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'DAYS_REGISTRATION', 'DAYS_ID_PUBLISH',
+            'REGION_POPULATION_RELATIVE', 'OWN_CAR_AGE'
+        ]
+        
+        if feature_x not in allowed_features or feature_y not in allowed_features:
+            return {"error": f"Invalid features. Allowed: {allowed_features}"}
+        
+        try:
+            engine = get_postgres_engine()
+            with engine.connect() as conn:
+                query = text(f'''
+                    SELECT "SK_ID_CURR", "TARGET", "{feature_x}", "{feature_y}"
+                    FROM application_train
+                    WHERE "{feature_x}" IS NOT NULL AND "{feature_y}" IS NOT NULL
+                    ORDER BY RANDOM()
+                    LIMIT :sample_size
+                ''')
+                result = conn.execute(query, {"sample_size": sample_size})
+                rows = result.fetchall()
+                
+                if not rows:
+                    return {"error": "No data available"}
+                
+                df = pd.DataFrame(rows, columns=['SK_ID_CURR', 'TARGET', feature_x, feature_y])
+                
+                # Split by target for coloring
+                accepted = df[df['TARGET'] == 0]
+                rejected = df[df['TARGET'] == 1]
+                
+                result = {
+                    'feature_x': feature_x,
+                    'feature_y': feature_y,
+                    'accepted': {
+                        'x': accepted[feature_x].tolist(),
+                        'y': accepted[feature_y].tolist(),
+                        'ids': accepted['SK_ID_CURR'].tolist()
+                    },
+                    'rejected': {
+                        'x': rejected[feature_x].tolist(),
+                        'y': rejected[feature_y].tolist(),
+                        'ids': rejected['SK_ID_CURR'].tolist()
+                    }
+                }
+                
+                # Add highlighted client if specified
+                if client_id:
+                    client_data = self.get_client(client_id)
+                    if client_data:
+                        result['highlight'] = {
+                            'x': client_data.get(feature_x),
+                            'y': client_data.get(feature_y),
+                            'client_id': client_id
+                        }
+                
+                return result
+                
+        except Exception as e:
+            logger.error(f"Error getting bivariate data: {e}")
+            return {"error": str(e)}
+    
+    def get_available_features(self) -> List[str]:
+        """Return list of features available for analysis."""
+        return [
+            'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE',
+            'DAYS_BIRTH', 'DAYS_EMPLOYED', 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3',
+            'CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'DAYS_REGISTRATION', 'DAYS_ID_PUBLISH',
+            'REGION_POPULATION_RELATIVE', 'OWN_CAR_AGE'
+        ]

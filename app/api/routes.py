@@ -60,6 +60,12 @@ def runs_page():
     return render_template('runs.html')
 
 
+@api_bp.route('/analysis')
+def analysis_page():
+    """Render client analysis page with gauge, comparison and bi-variate graphs."""
+    return render_template('analysis.html')
+
+
 @api_bp.route('/dashboard')
 def dashboard_page():
     """Render system monitoring dashboard."""
@@ -157,6 +163,129 @@ def get_client_data(client_id: int):
     if result is None:
         return jsonify({"error": f"Client {client_id} not found"}), 404
     return jsonify(result)
+
+
+@api_bp.route('/api/client/<int:client_id>/similar')
+def get_similar_clients(client_id: int):
+    """
+    Find similar clients for comparison analysis
+    ---
+    tags:
+      - Clients
+    parameters:
+      - name: client_id
+        in: path
+        type: integer
+        required: true
+        description: Reference client ID
+      - name: n_neighbors
+        in: query
+        type: integer
+        default: 10
+        description: Number of similar clients to return
+    responses:
+      200:
+        description: Similar clients found
+        schema:
+          type: object
+          properties:
+            client_id:
+              type: integer
+            n_similar:
+              type: integer
+            comparison_stats:
+              type: object
+            similar_default_rate:
+              type: number
+            population_default_rate:
+              type: number
+      404:
+        description: Client not found
+    """
+    n_neighbors = request.args.get('n_neighbors', 10, type=int)
+    result = client_service.get_similar_clients(client_id, n_neighbors)
+    if 'error' in result:
+        return jsonify(result), 404
+    return jsonify(result)
+
+
+@api_bp.route('/api/analysis/bivariate')
+def get_bivariate_data():
+    """
+    Get data for bi-variate scatter plot analysis
+    ---
+    tags:
+      - Analysis
+    parameters:
+      - name: feature_x
+        in: query
+        type: string
+        required: true
+        description: Feature for X axis
+      - name: feature_y
+        in: query
+        type: string
+        required: true
+        description: Feature for Y axis
+      - name: client_id
+        in: query
+        type: integer
+        required: false
+        description: Client ID to highlight
+      - name: sample_size
+        in: query
+        type: integer
+        default: 1000
+        description: Number of data points to return
+    responses:
+      200:
+        description: Bi-variate data for scatter plot
+        schema:
+          type: object
+          properties:
+            feature_x:
+              type: string
+            feature_y:
+              type: string
+            accepted:
+              type: object
+            rejected:
+              type: object
+            highlight:
+              type: object
+      400:
+        description: Invalid feature selection
+    """
+    feature_x = request.args.get('feature_x')
+    feature_y = request.args.get('feature_y')
+    client_id = request.args.get('client_id', type=int)
+    sample_size = request.args.get('sample_size', 1000, type=int)
+    
+    if not feature_x or not feature_y:
+        return jsonify({"error": "feature_x and feature_y are required"}), 400
+    
+    result = client_service.get_bivariate_data(feature_x, feature_y, client_id, sample_size)
+    if 'error' in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@api_bp.route('/api/analysis/features')
+def get_available_features():
+    """
+    Get list of available features for analysis
+    ---
+    tags:
+      - Analysis
+    responses:
+      200:
+        description: List of available feature names
+        schema:
+          type: array
+          items:
+            type: string
+    """
+    return jsonify(client_service.get_available_features())
 
 
 # =============================================================================
