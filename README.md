@@ -252,11 +252,15 @@ docker exec mission7_api_prod pytest tests/ --cov=app
 
 ## 📜 License
 
-Copyright © 2025-2026 All Rights Reserved.
+**Proprietary License** - Copyright © 2025-2026 All Rights Reserved.
 
 This software is proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
 
-**Commercial Use:** Any commercial use of this software requires a paid license agreement. Contact the author for licensing inquiries.
+**Commercial Use:** Any commercial use of this software requires a paid license agreement.
+
+📧 **Contact for licensing:** [datascience-adventure.xyz/contact](https://datascience-adventure.xyz/contact)
+
+See [LICENSE](LICENSE) for full terms.
 
 ---
 
