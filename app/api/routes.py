@@ -60,12 +60,6 @@ def runs_page():
     return render_template('runs.html')
 
 
-@api_bp.route('/analysis')
-def analysis_page():
-    """Render client analysis page with gauge, comparison and bi-variate graphs."""
-    return render_template('analysis.html')
-
-
 @api_bp.route('/dashboard')
 def dashboard_page():
     """Render system monitoring dashboard."""

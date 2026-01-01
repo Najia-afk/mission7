@@ -40,7 +40,6 @@
                         <a href="/audit">Audit</a>
                         <span class="nav-divider"></span>
                         <a href="/runs">Runs</a>
-                        <a href="/analysis">Analysis</a>
                         <a href="/dashboard">Dashboard</a>
                         <span class="nav-divider"></span>
                         <a href="/api/docs" target="_blank">API <span class="nav-badge">Swagger</span></a>
@@ -67,7 +66,7 @@
                         </svg>
                         Client Eligibility Check
                     </h1>
-                    <p>Retrieve client data and run the production model</p>
+                    <p>Retrieve client data, analyze risk and compare with similar profiles</p>
                 </div>
             </div>
         </div>
@@ -123,34 +122,176 @@
                     </div>
                 </div>
 
-                <!-- Results Card -->
-                <div id="resultCard" class="card result-card hidden animate-fade-in mt-xl" role="region" aria-live="polite">
-                    <div class="card-header flex justify-between items-center">
-                        <h3 class="card-title">Analysis for Client #<span id="res_client_id"></span></h3>
-                        <span class="badge badge-info">Model: CreditScoring_BestModel</span>
+                <!-- ================================================================== -->
+                <!-- ANALYSIS RESULTS (hidden initially, shown after prediction)       -->
+                <!-- ================================================================== -->
+                <div id="analysisResults" class="hidden">
+                    
+                    <!-- Section 1: Score Gauge + Decision -->
+                    <div class="card mt-xl">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                Analysis for Client #<span id="res_client_id"></span>
+                            </h3>
+                            <span class="badge" id="decisionBadge">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-2 gap-lg">
+                                <!-- Score Gauge -->
+                                <div>
+                                    <div id="scoreGauge" style="height: 280px;"></div>
+                                    <div class="alert alert-info text-center mt-md">
+                                        Threshold: <strong id="thresholdValue">0.45</strong> | 
+                                        Probability: <strong id="probabilityValue">--</strong>
+                                    </div>
+                                </div>
+                                <!-- Client Profile -->
+                                <div>
+                                    <h4 style="margin-bottom: 1rem;">Client Profile</h4>
+                                    <div class="grid grid-2 gap-sm">
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_income">--</div>
+                                            <div class="metric-label">Annual Income</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_credit">--</div>
+                                            <div class="metric-label">Credit Amount</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_annuity">--</div>
+                                            <div class="metric-label">Annuity</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_age">--</div>
+                                            <div class="metric-label">Age (Years)</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_employment">--</div>
+                                            <div class="metric-label">Employment (Years)</div>
+                                        </div>
+                                        <div class="metric-box">
+                                            <div class="metric-value" id="profile_ext2">--</div>
+                                            <div class="metric-label">Ext. Score 2</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="grid grid-2 gap-lg text-center mb-lg">
-                            <div class="metric-box result-metric">
-                                <div class="metric-value" id="res_prob"></div>
-                                <div class="metric-label">Probability of Default</div>
-                            </div>
-                            <div class="metric-box result-metric">
-                                <div class="metric-value" id="res_decision"></div>
-                                <div class="metric-label">Final Decision</div>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info text-center">
-                            Business Optimized Threshold: <strong><span id="res_threshold"></span></strong>
-                        </div>
 
-                        <div class="mt-lg">
-                            <h4>Decision Transparency (SHAP)</h4>
-                            <p class="form-text">Features pushing towards rejection (red) or acceptance (blue). Required for GDPR Article 22.</p>
+                    <!-- Section 2: SHAP Explanation -->
+                    <div class="card mt-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                                </svg>
+                                Decision Transparency (SHAP)
+                            </h3>
+                            <span class="badge badge-secondary">GDPR Article 22</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="form-text mb-md">Features pushing towards rejection (red) or acceptance (blue). This explanation is required for regulatory compliance.</p>
                             <div id="shapPlot" class="shap-container"></div>
                         </div>
                     </div>
+
+                    <!-- Section 3: Client Comparison -->
+                    <div class="card mt-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                                Comparison with Similar Clients
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-3 gap-md mb-lg" id="comparisonStats">
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_similar_rate">--</div>
+                                    <div class="metric-label">Similar Clients Default Rate</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_pop_rate">--</div>
+                                    <div class="metric-label">Population Default Rate</div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-value" id="stat_n_similar">--</div>
+                                    <div class="metric-label">Similar Clients Found</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-2 gap-lg">
+                                <div id="comparisonBarChart" style="height: 320px;"></div>
+                                <div id="defaultRateComparison" style="height: 320px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Bi-variate Analysis with Filters -->
+                    <div class="card mt-lg">
+                        <div class="card-header flex justify-between items-center">
+                            <h3 class="card-title">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;margin-right:8px;vertical-align:middle">
+                                    <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                                </svg>
+                                Bi-variate Analysis
+                            </h3>
+                            <span class="badge badge-info">Interactive Filters</span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Feature Filters -->
+                            <div class="grid grid-3 gap-md mb-lg">
+                                <div class="form-group">
+                                    <label for="feature_x" class="form-label">X-Axis Feature</label>
+                                    <select class="form-control" id="feature_x">
+                                        <option value="AMT_INCOME_TOTAL">Income Total</option>
+                                        <option value="AMT_CREDIT" selected>Credit Amount</option>
+                                        <option value="AMT_ANNUITY">Annuity</option>
+                                        <option value="AMT_GOODS_PRICE">Goods Price</option>
+                                        <option value="DAYS_BIRTH">Age (Days)</option>
+                                        <option value="DAYS_EMPLOYED">Employment (Days)</option>
+                                        <option value="EXT_SOURCE_1">External Source 1</option>
+                                        <option value="EXT_SOURCE_2">External Source 2</option>
+                                        <option value="EXT_SOURCE_3">External Source 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="feature_y" class="form-label">Y-Axis Feature</label>
+                                    <select class="form-control" id="feature_y">
+                                        <option value="AMT_INCOME_TOTAL" selected>Income Total</option>
+                                        <option value="AMT_CREDIT">Credit Amount</option>
+                                        <option value="AMT_ANNUITY">Annuity</option>
+                                        <option value="AMT_GOODS_PRICE">Goods Price</option>
+                                        <option value="DAYS_BIRTH">Age (Days)</option>
+                                        <option value="DAYS_EMPLOYED">Employment (Days)</option>
+                                        <option value="EXT_SOURCE_1">External Source 1</option>
+                                        <option value="EXT_SOURCE_2">External Source 2</option>
+                                        <option value="EXT_SOURCE_3">External Source 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <button type="button" class="btn btn-primary w-full" onclick="updateBivariateChart()">
+                                        Update Chart
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Scatter Plot -->
+                            <div id="bivariateChart" style="height: 400px;"></div>
+                            
+                            <div class="alert alert-secondary mt-md">
+                                <strong>Legend:</strong> 
+                                <span style="color:#22c55e">● Accepted (No Default)</span> | 
+                                <span style="color:#ef4444">● Rejected (Default)</span> | 
+                                <span style="color:#3b82f6">★ Current Client</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </main>
@@ -166,7 +307,12 @@
     </div>
 
     <script>
-        // Load model stats
+        // Global state
+        let currentClientId = null;
+        let currentClientData = null;
+        let currentPrediction = null;
+
+        // Load model stats on page load
         fetch('/api/audit/model-governance')
             .then(r => r.json())
             .then(data => {
@@ -185,22 +331,38 @@
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const formData = new FormData(e.target);
+            const clientId = formData.get('client_id');
             
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Analyzing...';
 
             try {
-                const response = await fetch('/predict', {
+                // 1. Get prediction
+                const predResponse = await fetch('/predict', {
                     method: 'POST',
                     body: formData
                 });
-                const data = await response.json();
+                const predData = await predResponse.json();
                 
-                if (data.error) {
-                    alert("Error: " + data.error);
-                } else {
-                    displayResults(data);
+                if (predData.error) {
+                    alert("Error: " + predData.error);
+                    return;
                 }
+                
+                currentClientId = clientId;
+                currentPrediction = predData;
+                
+                // 2. Get client data
+                const clientResponse = await fetch(`/api/client/${clientId}`);
+                currentClientData = await clientResponse.json();
+                
+                // 3. Get similar clients
+                const similarResponse = await fetch(`/api/client/${clientId}/similar?n_neighbors=20`);
+                const similarData = await similarResponse.json();
+                
+                // 4. Display all results
+                displayAllResults(predData, currentClientData, similarData);
+                
             } catch (err) {
                 alert("Request failed: " + err);
             } finally {
@@ -209,17 +371,95 @@
             }
         };
 
-        function displayResults(data) {
-            const resultCard = document.getElementById('resultCard');
-            document.getElementById('res_client_id').innerText = data.client_id;
-            document.getElementById('res_prob').innerText = (data.probability * 100).toFixed(1) + '%';
+        async function displayAllResults(predData, clientData, similarData) {
+            // Show results section
+            document.getElementById('analysisResults').classList.remove('hidden');
             
-            const decisionEl = document.getElementById('res_decision');
-            decisionEl.innerText = data.decision;
-            decisionEl.className = 'metric-value ' + (data.decision === 'ACCEPTED' ? 'decision-approved' : 'decision-rejected');
+            // 1. Update client ID and decision badge
+            document.getElementById('res_client_id').textContent = predData.client_id;
+            const decisionBadge = document.getElementById('decisionBadge');
+            decisionBadge.textContent = predData.decision;
+            decisionBadge.className = 'badge ' + (predData.decision === 'ACCEPTED' ? 'badge-success' : 'badge-danger');
             
-            document.getElementById('res_threshold').innerText = data.threshold;
-            document.getElementById('shapPlot').innerHTML = data.shap_html || '';
+            // 2. Render Score Gauge
+            renderScoreGauge(predData);
+            
+            // 3. Render Client Profile
+            renderClientProfile(clientData);
+            
+            // 4. Render SHAP
+            renderShap(predData);
+            
+            // 5. Render Comparison
+            renderComparison(similarData);
+            
+            // 6. Render Bi-variate Chart
+            await updateBivariateChart();
+            
+            // Scroll to results
+            document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Render score gauge using Plotly
+        function renderScoreGauge(predData) {
+            const probability = predData.probability;
+            const threshold = predData.threshold;
+            
+            document.getElementById('thresholdValue').textContent = threshold.toFixed(2);
+            document.getElementById('probabilityValue').textContent = (probability * 100).toFixed(1) + '%';
+            
+            const gaugeData = [{
+                type: 'indicator',
+                mode: 'gauge+number+delta',
+                value: probability * 100,
+                title: { text: 'Default Probability (%)', font: { size: 16 } },
+                delta: { 
+                    reference: threshold * 100, 
+                    increasing: { color: '#ef4444' },
+                    decreasing: { color: '#22c55e' }
+                },
+                gauge: {
+                    axis: { range: [0, 100], tickwidth: 1, tickcolor: '#64748b' },
+                    bar: { color: probability >= threshold ? '#ef4444' : '#22c55e' },
+                    bgcolor: 'white',
+                    borderwidth: 2,
+                    bordercolor: '#e2e8f0',
+                    steps: [
+                        { range: [0, threshold * 100], color: 'rgba(34, 197, 94, 0.2)' },
+                        { range: [threshold * 100, 100], color: 'rgba(239, 68, 68, 0.2)' }
+                    ],
+                    threshold: {
+                        line: { color: '#1e293b', width: 4 },
+                        thickness: 0.75,
+                        value: threshold * 100
+                    }
+                }
+            }];
+
+            const layout = {
+                margin: { t: 40, r: 25, l: 25, b: 20 },
+                paper_bgcolor: 'transparent',
+                font: { color: '#334155', family: 'Inter, sans-serif' }
+            };
+
+            Plotly.newPlot('scoreGauge', gaugeData, layout, {responsive: true});
+        }
+
+        // Render client profile
+        function renderClientProfile(clientData) {
+            document.getElementById('profile_income').textContent = formatCurrency(clientData.AMT_INCOME_TOTAL);
+            document.getElementById('profile_credit').textContent = formatCurrency(clientData.AMT_CREDIT);
+            document.getElementById('profile_annuity').textContent = formatCurrency(clientData.AMT_ANNUITY);
+            document.getElementById('profile_age').textContent = clientData.DAYS_BIRTH ? Math.floor(-clientData.DAYS_BIRTH / 365) : '--';
+            document.getElementById('profile_employment').textContent = clientData.DAYS_EMPLOYED ? 
+                (clientData.DAYS_EMPLOYED > 0 ? 'Retired' : Math.floor(-clientData.DAYS_EMPLOYED / 365)) : '--';
+            document.getElementById('profile_ext2').textContent = clientData.EXT_SOURCE_2 ? 
+                clientData.EXT_SOURCE_2.toFixed(3) : '--';
+        }
+
+        // Render SHAP explanation
+        function renderShap(predData) {
+            document.getElementById('shapPlot').innerHTML = predData.shap_html || '<p>SHAP explanation not available.</p>';
             
             // Execute Plotly scripts if present
             const scripts = document.getElementById('shapPlot').getElementsByTagName('script');
@@ -228,14 +468,196 @@
                 newScript.text = script.innerHTML;
                 document.body.appendChild(newScript).parentNode.removeChild(newScript);
             }
+        }
+
+        // Render comparison charts
+        function renderComparison(similarData) {
+            if (similarData.error) {
+                document.getElementById('comparisonStats').innerHTML = 
+                    `<div class="alert alert-warning" style="grid-column: span 3;">Comparison data not available: ${similarData.error}</div>`;
+                return;
+            }
             
-            resultCard.classList.remove('hidden');
-            resultCard.scrollIntoView({ behavior: 'smooth' });
+            // Update stats
+            document.getElementById('stat_similar_rate').textContent = similarData.similar_default_rate + '%';
+            document.getElementById('stat_pop_rate').textContent = similarData.population_default_rate + '%';
+            document.getElementById('stat_n_similar').textContent = similarData.n_similar;
+            
+            // Bar chart comparing client vs similar vs population
+            const stats = similarData.comparison_stats;
+            const features = Object.keys(stats).filter(f => stats[f].client_value !== null);
+            
+            const clientValues = features.map(f => stats[f].client_value);
+            const similarValues = features.map(f => stats[f].similar_mean);
+            const popValues = features.map(f => stats[f].population_mean);
+            
+            // Normalize for comparison
+            const normalizedClient = features.map((f, i) => 
+                popValues[i] ? (clientValues[i] / popValues[i] * 100).toFixed(1) : 0
+            );
+            const normalizedSimilar = features.map((f, i) => 
+                popValues[i] ? (similarValues[i] / popValues[i] * 100).toFixed(1) : 0
+            );
+            
+            const barData = [
+                { x: features.map(formatFeatureName), y: normalizedClient, name: 'Current Client', type: 'bar', marker: { color: '#3b82f6' } },
+                { x: features.map(formatFeatureName), y: normalizedSimilar, name: 'Similar Clients', type: 'bar', marker: { color: '#8b5cf6' } },
+                { x: features.map(formatFeatureName), y: features.map(() => 100), name: 'Population Avg', type: 'bar', marker: { color: '#94a3b8' } }
+            ];
+
+            const barLayout = {
+                title: 'Feature Comparison (% of Population)',
+                barmode: 'group',
+                margin: { t: 40, r: 20, l: 50, b: 80 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#334155', family: 'Inter, sans-serif', size: 11 },
+                legend: { orientation: 'h', y: -0.25 },
+                xaxis: { tickangle: -45 },
+                yaxis: { title: '%' }
+            };
+
+            Plotly.newPlot('comparisonBarChart', barData, barLayout, {responsive: true});
+            
+            // Default rate comparison donut charts
+            const pieData = [{
+                values: [similarData.similar_default_rate, 100 - similarData.similar_default_rate],
+                labels: ['Default', 'No Default'],
+                type: 'pie',
+                marker: { colors: ['#ef4444', '#22c55e'] },
+                textinfo: 'percent',
+                hole: 0.5,
+                domain: { x: [0, 0.45] }
+            }, {
+                values: [similarData.population_default_rate, 100 - similarData.population_default_rate],
+                labels: ['Default', 'No Default'],
+                type: 'pie',
+                marker: { colors: ['#ef4444', '#22c55e'] },
+                textinfo: 'percent',
+                hole: 0.5,
+                domain: { x: [0.55, 1] }
+            }];
+
+            const pieLayout = {
+                title: 'Default Rates Comparison',
+                margin: { t: 40, r: 20, l: 20, b: 20 },
+                paper_bgcolor: 'transparent',
+                font: { color: '#334155', family: 'Inter, sans-serif' },
+                annotations: [
+                    { text: 'Similar', x: 0.18, y: 0.5, font: { size: 12 }, showarrow: false },
+                    { text: 'Population', x: 0.82, y: 0.5, font: { size: 12 }, showarrow: false }
+                ],
+                showlegend: false
+            };
+
+            Plotly.newPlot('defaultRateComparison', pieData, pieLayout, {responsive: true});
+        }
+
+        // Update bi-variate scatter plot
+        async function updateBivariateChart() {
+            if (!currentClientId) return;
+            
+            const featureX = document.getElementById('feature_x').value;
+            const featureY = document.getElementById('feature_y').value;
+            
+            try {
+                const response = await fetch(`/api/analysis/bivariate?feature_x=${featureX}&feature_y=${featureY}&client_id=${currentClientId}&sample_size=1500`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('bivariateChart').innerHTML = `<div class="alert alert-warning">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                renderBivariateChart(data);
+            } catch (err) {
+                console.error('Bivariate fetch error:', err);
+            }
+        }
+
+        // Render bi-variate scatter plot
+        function renderBivariateChart(data) {
+            const traces = [
+                {
+                    x: data.accepted.x, y: data.accepted.y,
+                    mode: 'markers', type: 'scatter',
+                    name: 'Accepted',
+                    marker: { color: '#22c55e', size: 5, opacity: 0.5 },
+                    text: data.accepted.ids.map(id => `Client: ${id}`),
+                    hoverinfo: 'text+x+y'
+                },
+                {
+                    x: data.rejected.x, y: data.rejected.y,
+                    mode: 'markers', type: 'scatter',
+                    name: 'Rejected',
+                    marker: { color: '#ef4444', size: 5, opacity: 0.5 },
+                    text: data.rejected.ids.map(id => `Client: ${id}`),
+                    hoverinfo: 'text+x+y'
+                }
+            ];
+            
+            if (data.highlight && data.highlight.x !== null && data.highlight.y !== null) {
+                traces.push({
+                    x: [data.highlight.x], y: [data.highlight.y],
+                    mode: 'markers', type: 'scatter',
+                    name: `Client ${data.highlight.client_id}`,
+                    marker: { color: '#3b82f6', size: 16, symbol: 'star', line: { width: 2, color: '#1e40af' } },
+                    text: [`Current Client: ${data.highlight.client_id}`],
+                    hoverinfo: 'text+x+y'
+                });
+            }
+
+            const layout = {
+                title: `${formatFeatureName(data.feature_x)} vs ${formatFeatureName(data.feature_y)}`,
+                xaxis: { title: formatFeatureName(data.feature_x), gridcolor: '#e2e8f0' },
+                yaxis: { title: formatFeatureName(data.feature_y), gridcolor: '#e2e8f0' },
+                margin: { t: 40, r: 20, l: 60, b: 50 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'rgba(248, 250, 252, 0.5)',
+                font: { color: '#334155', family: 'Inter, sans-serif' },
+                legend: { orientation: 'h', y: -0.15 },
+                hovermode: 'closest'
+            };
+
+            Plotly.newPlot('bivariateChart', traces, layout, {responsive: true});
+        }
+
+        // Utility functions
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '--';
+            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
+        }
+
+        function formatFeatureName(feature) {
+            const nameMap = {
+                'AMT_INCOME_TOTAL': 'Income', 'AMT_CREDIT': 'Credit', 'AMT_ANNUITY': 'Annuity',
+                'AMT_GOODS_PRICE': 'Goods Price', 'DAYS_BIRTH': 'Age (Days)', 'DAYS_EMPLOYED': 'Employment (Days)',
+                'EXT_SOURCE_1': 'Ext. Source 1', 'EXT_SOURCE_2': 'Ext. Source 2', 'EXT_SOURCE_3': 'Ext. Source 3'
+            };
+            return nameMap[feature] || feature;
         }
 
         function toggleMobileMenu() {
             document.querySelector('.nav-links').classList.toggle('active');
         }
     </script>
+
+    <style>
+        .metric-box {
+            background: var(--bg-tertiary);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        .metric-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-danger { background: var(--danger); color: white; }
+        .badge-secondary { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .alert-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .shap-container { min-height: 200px; }
+    </style>
 </body>
 </html>
