@@ -133,6 +133,35 @@
     padding: var(--spacing-xl) 0;
 }
 
+/* Page Banner - Reduced height */
+.page-banner {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    color: white;
+    padding: 0.8rem 0;
+    margin-bottom: 2rem;
+}
+
+.page-banner h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-banner .banner-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.page-banner p {
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
 /* Two Column Layout */
 .layout-sidebar {
     display: grid;
