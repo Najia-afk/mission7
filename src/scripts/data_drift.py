@@ -120,14 +120,29 @@ def plot_drift_summary(drift_results: dict):
 
 
 def plot_distributions_interactive(reference_data: pd.DataFrame, current_data: pd.DataFrame,
-                                  drift_results: dict, numeric_features: list):
+                                  drift_results: dict, numeric_features: list,
+                                  max_samples: int = 5000):
     """
     Create interactive distributions figure with dropdown to select numeric feature.
     All features shown alphabetically in dropdown menu.
     Gray = Inconclusive test (p = NaN)
+    
+    NOTE: Data is sampled to max_samples to reduce HTML file size.
+    Statistical tests use full data, but visualizations use samples.
     """
     sorted_features = sorted(numeric_features)
     fig = go.Figure()
+    
+    # Sample data for visualization (keeps HTML file small)
+    if len(reference_data) > max_samples:
+        ref_sample = reference_data.sample(n=max_samples, random_state=42)
+    else:
+        ref_sample = reference_data
+        
+    if len(current_data) > max_samples:
+        curr_sample = current_data.sample(n=max_samples, random_state=42)
+    else:
+        curr_sample = current_data
     
     # Add histograms for all features (hidden initially, shown via dropdown)
     for i, feature in enumerate(sorted_features):
@@ -144,9 +159,9 @@ def plot_distributions_interactive(reference_data: pd.DataFrame, current_data: p
             status_str = "✅ No Drift"
             p_display = f"{p_val:.4f}"
         
-        # Reference histogram
+        # Reference histogram (using sampled data)
         fig.add_trace(go.Histogram(
-            x=reference_data[feature],
+            x=ref_sample[feature],
             name="Reference",
             opacity=0.6,
             nbinsx=30,
@@ -156,9 +171,9 @@ def plot_distributions_interactive(reference_data: pd.DataFrame, current_data: p
             marker_color='rgba(31, 119, 180, 0.7)'
         ))
         
-        # Current histogram
+        # Current histogram (using sampled data)
         fig.add_trace(go.Histogram(
-            x=current_data[feature],
+            x=curr_sample[feature],
             name="Current",
             opacity=0.6,
             nbinsx=30,

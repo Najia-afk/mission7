@@ -35,10 +35,12 @@ class EDAVisualizer:
         return fig
 
     @staticmethod
-    def plot_numerical_distribution(df: pd.DataFrame, columns: list = None):
+    def plot_numerical_distribution(df: pd.DataFrame, columns: list = None, max_samples: int = 5000):
         """
         Creates interactive box plots and histograms for numerical columns.
         Uses a dropdown to switch between columns.
+        
+        NOTE: Data is sampled to max_samples to reduce HTML file size.
         """
         if columns is None:
             columns = df.select_dtypes(include=['number']).columns.tolist()
@@ -49,6 +51,12 @@ class EDAVisualizer:
         if not columns:
             print("No valid numerical columns found.")
             return None
+        
+        # Sample data for visualization (keeps HTML file small)
+        if len(df) > max_samples:
+            df_sample = df.sample(n=max_samples, random_state=42)
+        else:
+            df_sample = df
 
         # Create figure with secondary y-axis
         fig = make_subplots(
@@ -83,7 +91,7 @@ class EDAVisualizer:
         # Add traces for all columns, but set visible=False for all except first
         for i, col in enumerate(columns):
             visible = (i == 0)
-            EDAVisualizer._add_traces_for_col(fig, df, col, visible)
+            EDAVisualizer._add_traces_for_col(fig, df_sample, col, visible)
 
         # Create buttons
         buttons = []
