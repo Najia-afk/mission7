@@ -42,10 +42,20 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
     echo "   Continuing anyway - artifact sync will be skipped"
 fi
 
+# Seed dataset tables (only if missing/empty)
+if [ -f "/app/app/scripts/seed_postgres_from_dataset.py" ]; then
+    echo "🗄️ Seeding PostgreSQL dataset tables (if needed)..."
+    python /app/app/scripts/seed_postgres_from_dataset.py || {
+        echo "⚠️ Warning: Dataset seed failed (non-fatal)"
+    }
+else
+    echo "ℹ️ Dataset seeding script not found; skipping"
+fi
+
 # Sync model artifacts to database
-if [ -f "/app/scripts/sync_artifacts_to_db.py" ]; then
+if [ -f "/app/app/scripts/sync_artifacts_to_db.py" ]; then
     echo "📦 Syncing model artifacts to database..."
-    python /app/scripts/sync_artifacts_to_db.py --prod-models-dir /app/prod_models || {
+    python /app/app/scripts/sync_artifacts_to_db.py --prod-models-dir /app/prod_models || {
         echo "⚠️ Warning: Artifact sync failed (non-fatal)"
     }
 else
@@ -53,4 +63,4 @@ else
 fi
 
 echo "🌐 Starting Gunicorn server..."
-exec gunicorn --bind 0.0.0.0:5001 --workers 2 --timeout 120 app.wsgi:app
+exec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 app.wsgi:app

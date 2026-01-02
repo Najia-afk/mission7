@@ -43,12 +43,12 @@ ENV MLFLOW_TRACKING_URI=http://mlflow:5005
 ENV PYTHONUNBUFFERED=1
 ENV USE_POSTGRES=true
 
-# Expose API port
-EXPOSE 5001
+# Expose API port (matches docker-compose.prod.yml and nginx upstream)
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5001/api/health || exit 1
+    CMD curl -f http://localhost:8000/api/health || exit 1
 
 # Run with entrypoint (syncs artifacts then starts Gunicorn)
 CMD ["./entrypoint.sh"]

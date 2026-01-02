@@ -119,7 +119,11 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-dataset/
+# Dataset - ignore all except compressed samples for prod seeding
+dataset/*
+!dataset/application_train_sample.csv.gz
+!dataset/application_test.csv.gz
+
 mlruns/
 cache/
 *.pkl

@@ -63,7 +63,7 @@ services:
     networks:
       - mission7_prod_net
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -92,7 +92,6 @@ services:
       - DB_PATH=/app/dataset/home_credit.db
       - FLASK_ENV=production
       - PYTHONPATH=/app:/app/src
-    command: /bin/bash -c "python /app/scripts/sync_artifacts_to_db.py --prod-models-dir /app/prod_models && gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 app.wsgi:app"
     depends_on:
       postgres:
         condition: service_healthy

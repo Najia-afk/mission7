@@ -43,7 +43,7 @@ mission7/
 │   └── evidently_data_drift_report.json  # Drift report (JSON)
 │
 ├── dataset/                # 💾 DATA FILES
-│   └── home_credit.db     # SQLite database
+│   └── home_credit.db     # Optional local SQLite dataset (not committed)
 │
 ├── nginx/                  # 🌐 REVERSE PROXY
 │   └── default.conf       # Nginx configuration
@@ -80,6 +80,13 @@ docker compose up -d
 ```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+On first startup with a fresh Postgres volume, the API container automatically seeds
+`application_train` and `application_test` in PostgreSQL **only if** `dataset/home_credit.db` is present.
+
+Notes:
+- `dataset/` is ignored by git to avoid committing large data files.
+- Seeding is idempotent: if tables already have rows, it skips.
 
 | Service | URL |
 |---------|-----|
