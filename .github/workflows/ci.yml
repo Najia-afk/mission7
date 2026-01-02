@@ -82,6 +82,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.prod
           push: false
           tags: mission7-api:${{ github.sha }}
           cache-from: type=gha
@@ -89,7 +90,7 @@ jobs:
       
       - name: Test Docker build
         run: |
-          docker build -t mission7-api:test .
+          docker build -f Dockerfile.prod -t mission7-api:test .
           docker run --rm mission7-api:test python -c "import flask; import mlflow; print('✅ Docker build OK')"
 
   # ===========================================================================
