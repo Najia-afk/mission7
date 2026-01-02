@@ -30,7 +30,7 @@ def get_artifact_from_db(model_id, artifact_type):
     """
     try:
         # Import here to avoid circular imports
-        from scripts.sync_artifacts_to_db import get_artifact, get_db_uri
+        from app.scripts.sync_artifacts_to_db import get_artifact, get_db_uri
         config = get_config()
         db_uri = config.DB_URI if config.USE_POSTGRES else None
         

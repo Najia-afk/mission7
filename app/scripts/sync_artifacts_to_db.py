@@ -57,6 +57,30 @@ def ensure_model_artifacts_table(engine):
     print("✅ model_artifacts table ensured")
 
 
+def ensure_predictions_table(engine):
+    """Create predictions table if it doesn't exist (for audit logging)."""
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS predictions (
+        id SERIAL PRIMARY KEY,
+        client_id INTEGER NOT NULL,
+        probability FLOAT NOT NULL,
+        threshold FLOAT NOT NULL,
+        decision VARCHAR(20) NOT NULL,
+        model_version VARCHAR(64),
+        request_source VARCHAR(20) DEFAULT 'api',
+        shap_values JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_predictions_client_id ON predictions(client_id);
+    CREATE INDEX IF NOT EXISTS idx_predictions_created_at ON predictions(created_at);
+    CREATE INDEX IF NOT EXISTS idx_predictions_decision ON predictions(decision);
+    """
+    with engine.connect() as conn:
+        conn.execute(text(create_table_sql))
+        conn.commit()
+    print("✅ predictions table ensured")
+
+
 def load_file_content(filepath):
     """Load file content, return None if file doesn't exist."""
     if os.path.exists(filepath):
@@ -162,6 +186,7 @@ def sync_artifacts(prod_models_dir=None):
     
     engine = create_engine(db_uri)
     ensure_model_artifacts_table(engine)
+    ensure_predictions_table(engine)
     
     Session = sessionmaker(bind=engine)
     session = Session()
