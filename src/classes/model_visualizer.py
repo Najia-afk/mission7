@@ -64,12 +64,39 @@ class ModelVisualizer:
         return feature_names.get(clean_name, clean_name)
     
     @classmethod
+    def format_number_human(cls, value: float, suffix: str = "") -> str:
+        """
+        Format large numbers in human-readable K/M format.
+        
+        Examples:
+            65700 → "65.7K"
+            1500000 → "1.5M"
+            0.85 → "0.85"
+        """
+        abs_val = abs(value)
+        sign = "-" if value < 0 else ""
+        
+        if abs_val >= 1_000_000:
+            formatted = f"{sign}{abs_val / 1_000_000:.1f}M"
+        elif abs_val >= 1_000:
+            formatted = f"{sign}{abs_val / 1_000:.1f}K"
+        elif abs_val >= 100:
+            formatted = f"{sign}{abs_val:.0f}"
+        elif abs_val >= 1:
+            formatted = f"{sign}{abs_val:.1f}"
+        else:
+            formatted = f"{sign}{abs_val:.2f}"
+        
+        return f"{formatted}{suffix}"
+    
+    @classmethod
     def transform_value_for_display(cls, feature_name: str, value: float) -> tuple:
         """
-        Transform value for human-readable display (e.g., DAYS to Years).
+        Transform value for human-readable display (e.g., DAYS to Years, currency to K/$).
         
         Returns:
-            Tuple of (display_value, unit_suffix)
+            Tuple of (display_string, is_formatted_string)
+            If is_formatted_string=True, display_string is ready to use directly
         """
         mappings = cls.load_feature_mappings()
         days_columns = mappings.get('days_to_years_columns', [])
@@ -84,20 +111,22 @@ class ModelVisualizer:
         if clean_name in days_columns:
             # DAYS_BIRTH = -15000 means ~41 years old
             # Convert: abs(days) / 365.25
-            years = round(abs(value) / 365.25, 1)
-            return years, "yrs"
+            years = abs(value) / 365.25
+            return cls.format_number_human(years, " yrs"), True
         
-        # Check if currency column
+        # Check if currency column - format in K/M with $
         currency_columns = mappings.get('currency_columns', [])
         if clean_name in currency_columns:
-            return value, "$"
+            return cls.format_number_human(value, "$"), True
         
         # Check if percentage column
         percentage_columns = mappings.get('percentage_columns', [])
         if clean_name in percentage_columns:
-            return round(value * 100, 1) if abs(value) < 10 else round(value, 1), "%"
+            pct_val = value * 100 if abs(value) < 10 else value
+            return f"{pct_val:.1f}%", True
         
-        return value, ""
+        # Default: format with appropriate precision
+        return value, False
     
     @staticmethod
     def plot_learning_curves(models_dict, X, y, scorer=None, scoring_name='Score', cv=5, n_jobs=-1, train_sizes=np.linspace(0.1, 1.0, 5)):
@@ -397,7 +426,8 @@ class ModelVisualizer:
             'shap_values': shap_values,
             'expected_value': expected_value,
             'feature_names': feature_names,
-            'X_processed': X_processed_df
+            'X_processed': X_processed_df,
+            'X_original': X_sample  # Original values for display
         }
 
     @staticmethod
@@ -460,6 +490,7 @@ class ModelVisualizer:
     def plot_shap_local(shap_data, sample_idx=0):
         """
         Creates a local feature importance plot (Force Plot equivalent) for a specific sample.
+        Uses original (non-standardized) values for display when available.
         """
         if shap_data is None:
             return None
@@ -467,6 +498,7 @@ class ModelVisualizer:
         shap_values = shap_data['shap_values'][sample_idx]
         feature_names = list(shap_data['feature_names'])  # Convert to list
         X_processed = shap_data['X_processed']
+        X_original = shap_data.get('X_original')  # Original values (optional)
         base_value = shap_data['expected_value']
         
         # Ensure shap_values is 1D
@@ -489,21 +521,62 @@ class ModelVisualizer:
         
         final_value = base_value + np.sum(shap_values)
         
+        # Helper to get original value for a processed feature
+        def get_original_value(feat_name: str, processed_val: float) -> float:
+            """Try to get the original value from X_original."""
+            if X_original is None:
+                return processed_val
+            
+            try:
+                # Strip prefixes to get original column name
+                clean = feat_name
+                for prefix in ['num__', 'cat__', 'ind__']:
+                    if clean.startswith(prefix):
+                        clean = clean[len(prefix):]
+                        break
+                
+                # Remove _origin suffix
+                if clean.endswith('_origin'):
+                    clean = clean[:-7]
+                
+                # Check if this column exists in original
+                if clean in X_original.columns:
+                    val = X_original.iloc[sample_idx][clean]
+                    if val is not None and not pd.isna(val):
+                        return float(val)
+                    return processed_val
+                
+                # For categorical features like cat__NAME_INCOME_TYPE_Working
+                # the original column is NAME_INCOME_TYPE
+                parts = clean.rsplit('_', 1)
+                if len(parts) > 1 and parts[0] in X_original.columns:
+                    return processed_val  # Categorical - return processed (0/1)
+                
+                return processed_val
+            except Exception:
+                return processed_val
+        
         # Create labels with human-readable names
         y_labels = []
-        for val, feat in zip(sorted_values, sorted_features):
+        display_values_for_hover = []
+        for proc_val, feat in zip(sorted_values, sorted_features):
+            # Get original value if available
+            orig_val = get_original_value(feat, proc_val)
+            
             # Get human-readable name
             human_name = ModelVisualizer.get_human_readable_name(feat)
             
-            # Transform value for display (e.g., DAYS to Years)
-            display_val, unit = ModelVisualizer.transform_value_for_display(feat, val)
+            # Transform value for display (e.g., DAYS to Years, currency to K$)
+            # Use original value for transformation
+            display_str, is_formatted = ModelVisualizer.transform_value_for_display(feat, orig_val)
+            display_values_for_hover.append(display_str if is_formatted else f"{orig_val:.2f}")
             
             # Clean feature name and format label
             clean_feat = feat
             if clean_feat.startswith('cat__'):
                 clean_feat = clean_feat.replace('cat__', '')
                 # If it's a categorical flag (value 1), make it explicit
-                if abs(val - 1.0) < 1e-3:
+                if abs(proc_val - 1.0) < 1e-3:
                     # Try to find the last underscore which usually separates feature name from category
                     parts = clean_feat.rsplit('_', 1)
                     if len(parts) > 1:
@@ -512,19 +585,19 @@ class ModelVisualizer:
                 else:
                     y_labels.append(f"<b>NO</b> | {human_name}")
             elif clean_feat.startswith('num__'):
-                if unit:
-                    y_labels.append(f"<b>{display_val:.1f}{unit}</b> | {human_name}")
+                if is_formatted:
+                    y_labels.append(f"<b>{display_str}</b> | {human_name}")
                 else:
-                    y_labels.append(f"<b>{display_val:.2f}</b> | {human_name}")
+                    y_labels.append(f"<b>{orig_val:.2f}</b> | {human_name}")
             elif clean_feat.startswith('ind__'):
                 clean_feat = clean_feat.replace('ind__', '').replace('_origin', '')
-                status = "PRESENT" if abs(val - 1.0) < 1e-3 else "MISSING"
+                status = "PRESENT" if abs(proc_val - 1.0) < 1e-3 else "MISSING"
                 y_labels.append(f"<b>{status}</b> | {human_name}")
             else:
-                if unit:
-                    y_labels.append(f"<b>{display_val:.1f}{unit}</b> | {human_name}")
+                if is_formatted:
+                    y_labels.append(f"<b>{display_str}</b> | {human_name}")
                 else:
-                    y_labels.append(f"<b>{display_val:.2f}</b> | {human_name}")
+                    y_labels.append(f"<b>{orig_val:.2f}</b> | {human_name}")
         
         fig = go.Figure()
         
@@ -536,9 +609,9 @@ class ModelVisualizer:
             y=y_labels,
             orientation='h',
             marker_color=colors,
-            text=[f"{float(val):.2f}" for val in sorted_values],
+            text=display_values_for_hover,
             textposition='auto',
-            hovertemplate="Feature: %{y}<br>Raw Value: %{text}<br>SHAP: %{x:.4f}<extra></extra>"
+            hovertemplate="Feature: %{y}<br>Value: %{text}<br>SHAP: %{x:.4f}<extra></extra>"
         ))
         
         fig.update_layout(
