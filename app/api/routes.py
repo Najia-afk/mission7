@@ -525,6 +525,29 @@ def promote_model():
     return jsonify(result)
 
 
+@api_bp.route('/api/models/reload', methods=['POST'])
+def reload_model():
+    """
+    Reload the model from MLflow (clears cache)
+    ---
+    tags:
+      - Models
+    responses:
+      200:
+        description: Model reloaded successfully
+    """
+    from app.api.services.model_service import ModelService
+    ModelService.clear_cache()
+    model, threshold = model_service.get_production_model()
+    return jsonify({
+        "success": True,
+        "message": "Model reloaded",
+        "source": ModelService._model_source,
+        "model_loaded": model is not None,
+        "threshold": threshold
+    })
+
+
 # =============================================================================
 # PREDICTION HISTORY
 # =============================================================================
@@ -646,3 +669,55 @@ def prediction_stats_api():
     """
     from app.utils.database import get_prediction_stats
     return jsonify(get_prediction_stats())
+
+
+@api_bp.route('/api/predictions/<int:prediction_id>')
+def get_prediction_detail(prediction_id: int):
+    """
+    Get a single prediction with full details including SHAP values
+    ---
+    tags:
+      - Predictions
+    parameters:
+      - name: prediction_id
+        in: path
+        type: integer
+        required: true
+        description: The prediction ID
+    responses:
+      200:
+        description: Full prediction details
+        schema:
+          type: object
+          properties:
+            id:
+              type: integer
+            client_id:
+              type: integer
+            probability:
+              type: number
+            decision:
+              type: string
+            threshold:
+              type: number
+            input_features:
+              type: object
+            shap_values:
+              type: object
+            created_at:
+              type: string
+            model_id:
+              type: integer
+            model_version:
+              type: string
+      404:
+        description: Prediction not found
+    """
+    from app.utils.database import get_prediction_by_id
+    
+    prediction = get_prediction_by_id(prediction_id)
+    
+    if prediction is None:
+        return jsonify({"error": "Prediction not found"}), 404
+    
+    return jsonify(prediction)

@@ -126,6 +126,9 @@ class PredictionService:
         model_id = self.model_service.get_current_model_id()
         model_version = self.model_service.get_current_model_version()
         
+        # Extract input features for logging
+        input_features_dict = X_features.iloc[0].to_dict()
+        
         # Log prediction
         log_prediction_to_postgres(
             client_id=client_id if client_id else 0,
@@ -134,7 +137,8 @@ class PredictionService:
             decision=decision,
             model_id=model_id,
             model_version=model_version,
-            shap_values=shap_dict
+            shap_values=shap_dict,
+            input_features=input_features_dict
         )
         
         logger.info(f"MLflow Serving prediction for {client_id or 'manual'}: {decision} ({y_proba:.4f})")
@@ -174,6 +178,9 @@ class PredictionService:
         model_id = self.model_service.get_current_model_id()
         model_version = self.model_service.get_current_model_version()
         
+        # Extract input features for logging
+        input_features_dict = X_features.iloc[0].to_dict()
+        
         # Log prediction with SHAP values for drift monitoring
         log_prediction_to_postgres(
             client_id=client_id if client_id else 0,
@@ -182,7 +189,8 @@ class PredictionService:
             decision=decision,
             model_id=model_id,
             model_version=model_version,
-            shap_values=shap_dict
+            shap_values=shap_dict,
+            input_features=input_features_dict
         )
         
         logger.info(f"Local prediction for {client_id or 'manual'}: {decision} ({y_proba:.4f})")

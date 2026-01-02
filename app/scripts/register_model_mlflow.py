@@ -113,15 +113,14 @@ def register_model_in_mlflow(prod_models_dir: str, mlflow_uri: str = None):
         )
         print(f"✅ Registered model: {metadata['model_name']} version {registered_model.version}")
         
-        # Transition to Production stage
+        # Set 'champion' alias (MLflow 2.9+ - replaces deprecated stages)
         client = mlflow.tracking.MlflowClient()
-        client.transition_model_version_stage(
+        client.set_registered_model_alias(
             name=metadata['model_name'],
-            version=registered_model.version,
-            stage="Production",
-            archive_existing_versions=True
+            alias="champion",
+            version=registered_model.version
         )
-        print(f"✅ Model transitioned to Production stage")
+        print(f"✅ Model set as 'champion' (alias)")
         
     except Exception as e:
         print(f"⚠️ Model registry update: {e}")
@@ -134,6 +133,7 @@ def register_model_in_mlflow(prod_models_dir: str, mlflow_uri: str = None):
 def _log_model_details(mlflow, model, metadata, prod_models_dir, feature_names):
     """Log all model details to MLflow run."""
     import numpy as np
+    import pandas as pd
     
     # Log parameters
     mlflow.log_param("algorithm", metadata.get('algorithm', 'LightGBM'))
@@ -165,23 +165,46 @@ def _log_model_details(mlflow, model, metadata, prod_models_dir, feature_names):
     mlflow.set_tag("deployment_status", "production")
     
     # Log model
+    import shutil
+    import tempfile
+    
+    # Use a temporary directory for saving the model
+    temp_dir = tempfile.mkdtemp()
+    local_model_path = os.path.join(temp_dir, "model")
+    
     if feature_names:
         # Create sample input for signature
-        sample_input = np.zeros((1, len(feature_names)))
         try:
+            # Use DataFrame if feature names exist to avoid warning and signature errors
+            sample_input = pd.DataFrame(
+                np.zeros((1, len(feature_names))), 
+                columns=feature_names
+            )
+            
             from mlflow.models.signature import infer_signature
-            signature = infer_signature(sample_input, model.predict_proba(sample_input)[:, 1])
-            mlflow.sklearn.log_model(
-                model,
-                "model",
+            # Predict proba returns (n_samples, 2), we take the second column (positive class)
+            prediction = model.predict_proba(sample_input)[:, 1]
+            signature = infer_signature(sample_input, prediction)
+            
+            mlflow.sklearn.save_model(
+                sk_model=model,
+                path=local_model_path,
                 signature=signature,
                 input_example=sample_input
             )
         except Exception as e:
             print(f"⚠️ Could not infer signature: {e}")
-            mlflow.sklearn.log_model(model, "model")
+            mlflow.sklearn.save_model(sk_model=model, path=local_model_path)
     else:
-        mlflow.sklearn.log_model(model, "model")
+        mlflow.sklearn.save_model(sk_model=model, path=local_model_path)
+    
+    # Log the saved model directory as an artifact
+    mlflow.log_artifacts(local_model_path, artifact_path="model")
+    print("   ✅ Logged model artifact via save_model/log_artifacts")
+    
+    # Cleanup
+    if os.path.exists(temp_dir):
+        shutil.rmtree(temp_dir)
     
     # Log artifacts
     artifacts_to_log = [

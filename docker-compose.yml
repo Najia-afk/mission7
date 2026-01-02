@@ -41,7 +41,7 @@ services:
   api:
     build: .
     container_name: mission7_api
-    command: gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 src.api.app:app
+    command: gunicorn --bind 0.0.0.0:8000 --timeout 120 --workers 2 app.wsgi:app
     ports:
       - "8070:8000"
     volumes:
@@ -50,6 +50,7 @@ services:
       - ./prod_models:/app/prod_models
       - ./dataset:/app/dataset
     environment:
+      - PYTHONPATH=/app
       - MLFLOW_TRACKING_URI=http://mlflow-prod:5002
       - DB_URI=postgresql://${POSTGRES_USER:-mission7}:${POSTGRES_PASSWORD:-mission7pass}@postgres:5432/${POSTGRES_DB:-credit_scoring}
       - PROD_MODEL_PATH=/app/prod_models/model.pkl

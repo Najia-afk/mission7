@@ -69,6 +69,7 @@ def ensure_predictions_table(engine):
         model_id VARCHAR(64),
         model_version VARCHAR(64),
         request_source VARCHAR(20) DEFAULT 'api',
+        input_features JSONB,
         shap_values JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );

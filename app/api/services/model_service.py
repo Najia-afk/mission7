@@ -30,6 +30,7 @@ class ModelService:
     _model_cache = None
     _threshold_cache = None
     _model_source = None
+    _cached_version = None  # Track which MLflow version is cached
     
     def __init__(self):
         self.config = get_config()
@@ -120,14 +121,25 @@ class ModelService:
 
     def get_current_model_id(self) -> Optional[str]:
         """
-        Get the current model ID (run_id) for the active production model.
+        Get the current model ID (run_id) for the active champion model.
         This is used to link predictions to the model that made them.
         
         Returns:
             Model ID string or None if not available
         """
+        # First check metadata file
         metadata = self._load_metadata()
-        return metadata.get("run_id")
+        if metadata.get("run_id"):
+            return metadata.get("run_id")
+        
+        # Fallback: get from MLflow champion alias (MLflow 2.9+)
+        try:
+            version_info = self.client.get_model_version_by_alias(self.config.MODEL_NAME, "champion")
+            return version_info.run_id
+        except Exception as e:
+            logger.warning(f"Could not get model ID from MLflow: {e}")
+        
+        return None
 
     def get_current_model_version(self) -> Optional[str]:
         """
@@ -136,39 +148,70 @@ class ModelService:
         Returns:
             Model version string or None if not available
         """
+        # First check metadata file
         metadata = self._load_metadata()
-        return metadata.get("model_version")
+        if metadata.get("model_version"):
+            return metadata.get("model_version")
+        
+        # Fallback: get from MLflow champion alias (MLflow 2.9+)
+        try:
+            version_info = self.client.get_model_version_by_alias(self.config.MODEL_NAME, "champion")
+            return version_info.version
+        except Exception as e:
+            logger.warning(f"Could not get model version from MLflow: {e}")
+        
+        return None
     
     def get_production_model(self) -> Tuple[Any, float]:
         """
         Get the production model with caching and fallback strategy:
-        1. Return cached model if available
-        2. Try /prod_models/model.pkl (git-committed, preferred)
-        3. Try MLflow registry with 'Production' stage
+        1. Check if cached model version matches MLflow Production version
+        2. If not, reload from MLflow registry
+        3. Fallback to /prod_models/model.pkl (for offline/testing)
         
         Returns:
             Tuple of (model, threshold)
         """
-        # Return cached model if available
+        # Check if cache is still valid (same version as MLflow Production)
         if ModelService._model_cache is not None:
-            logger.debug(f"Using cached model (source: {ModelService._model_source})")
-            return ModelService._model_cache, ModelService._threshold_cache
+            try:
+                current_prod_version = self._get_mlflow_production_version()
+                if current_prod_version and current_prod_version != ModelService._cached_version:
+                    logger.info(f"MLflow Production changed from v{ModelService._cached_version} to v{current_prod_version}, reloading...")
+                    ModelService.clear_cache()
+                else:
+                    logger.debug(f"Using cached model v{ModelService._cached_version} (source: {ModelService._model_source})")
+                    return ModelService._model_cache, ModelService._threshold_cache
+            except Exception as e:
+                logger.warning(f"Version check failed, using cache: {e}")
+                return ModelService._model_cache, ModelService._threshold_cache
         
-        # Try file-based model first
-        model, threshold = self._load_from_file()
-        if model is not None:
-            ModelService._model_cache = model
-            ModelService._threshold_cache = threshold
-            ModelService._model_source = 'file'
-            return model, threshold
-        
-        # Fallback to MLflow registry
+        # Try MLflow registry first (primary source of truth)
         model, threshold = self._load_from_mlflow()
         if model is not None:
             ModelService._model_cache = model
             ModelService._threshold_cache = threshold
             ModelService._model_source = 'mlflow'
+            ModelService._cached_version = self._get_mlflow_production_version()
+            return model, threshold
+        
+        # Fallback to file-based model (for offline/testing)
+        model, threshold = self._load_from_file()
+        if model is not None:
+            ModelService._model_cache = model
+            ModelService._threshold_cache = threshold
+            ModelService._model_source = 'file'
+            ModelService._cached_version = 'file'
         return model, threshold
+    
+    def _get_mlflow_production_version(self) -> Optional[str]:
+        """Get the current champion version from MLflow registry (using aliases)."""
+        try:
+            version_info = self.client.get_model_version_by_alias(self.config.MODEL_NAME, "champion")
+            return version_info.version
+        except:
+            pass
+        return None
     
     @classmethod
     def clear_cache(cls):
@@ -176,6 +219,7 @@ class ModelService:
         cls._model_cache = None
         cls._threshold_cache = None
         cls._model_source = None
+        cls._cached_version = None
         logger.info("Model cache cleared")
     
     @classmethod
@@ -213,18 +257,19 @@ class ModelService:
             return None, default_threshold
     
     def _load_from_mlflow(self) -> Tuple[Any, float]:
-        """Load model from MLflow registry."""
+        """Load model from MLflow registry using alias (MLflow 2.9+ compatible)."""
         try:
-            model_uri = f"models:/{self.config.MODEL_NAME}/Production"
+            # Use @champion alias (new MLflow 2.9+ approach)
+            model_uri = f"models:/{self.config.MODEL_NAME}@champion"
             model = mlflow.sklearn.load_model(model_uri)
             
-            # Get threshold from run params
-            versions = self.client.get_latest_versions(self.config.MODEL_NAME, stages=["Production"])
-            if versions:
-                run_id = versions[0].run_id
+            # Get threshold from run params using alias
+            try:
+                version_info = self.client.get_model_version_by_alias(self.config.MODEL_NAME, "champion")
+                run_id = version_info.run_id
                 run = self.client.get_run(run_id)
                 threshold = float(run.data.params.get("business_optimal_threshold", self.config.DEFAULT_THRESHOLD))
-            else:
+            except Exception:
                 threshold = self.config.DEFAULT_THRESHOLD
             
             logger.info(f"✅ Model loaded from MLflow: {model_uri}")
@@ -237,7 +282,9 @@ class ModelService:
         """Get information about the current production model."""
         try:
             model, threshold = self.get_production_model()
-            model_source = "file" if os.path.exists(self.config.PROD_MODEL_PATH) else "mlflow"
+            
+            # Use the actual source from where the model was loaded
+            model_source = ModelService._model_source or "unknown"
             
             metadata = self._load_metadata()
             
@@ -279,17 +326,28 @@ class ModelService:
                     "metadata": metadata
                 })
         
-        # MLflow models
+        # MLflow models - using aliases (MLflow 2.9+)
         try:
+            # Get current champion version for comparison
+            champion_version = None
+            try:
+                champion_info = self.client.get_model_version_by_alias(self.config.MODEL_NAME, "champion")
+                champion_version = champion_info.version
+            except:
+                pass
+            
             for rm in self.client.search_registered_models():
                 for version in self.client.search_model_versions(f"name='{rm.name}'"):
+                    is_champion = version.version == champion_version
+                    # Convert aliases to list (it's a RepeatedScalarContainer)
+                    aliases = list(version.aliases) if hasattr(version, 'aliases') and version.aliases else []
                     models.append({
                         "source": "mlflow",
                         "name": rm.name,
                         "version": version.version,
-                        "stage": version.current_stage,
+                        "aliases": aliases,
                         "run_id": version.run_id,
-                        "active": version.current_stage == "Production"
+                        "active": is_champion
                     })
         except Exception as e:
             logger.warning(f"MLflow listing error: {e}")
@@ -417,37 +475,62 @@ class ModelService:
         model_name: str,
         version: str
     ) -> Dict[str, Any]:
-        """Promote a model version to Production stage in MLflow."""
+        """
+        Promote a model version using MLflow Model Aliases (MLflow 2.9+).
+        Sets the 'champion' alias on the specified version.
+        This is the primary deployment mechanism - clears cache so next
+        prediction uses the newly promoted model.
+        """
         try:
-            # First, demote any current Production versions to Archived
-            try:
-                versions = self.client.search_model_versions(f"name='{model_name}'")
-                for v in versions:
-                    if v.current_stage == "Production" and v.version != version:
-                        self.client.transition_model_version_stage(
-                            name=model_name,
-                            version=v.version,
-                            stage="Archived"
-                        )
-                        logger.info(f"Archived version {v.version}")
-            except Exception as e:
-                logger.warning(f"Could not archive old versions: {e}")
+            # Get the run_id for the version being promoted
+            version_info = self.client.get_model_version(model_name, version)
+            run_id = version_info.run_id
             
-            # Promote the requested version to Production
-            self.client.transition_model_version_stage(
+            # Set the 'champion' alias on this version (replaces old alias automatically)
+            # This is the MLflow 2.9+ way - no need to manually remove from previous version
+            self.client.set_registered_model_alias(
                 name=model_name,
-                version=version,
-                stage="Production"
+                alias="champion",
+                version=version
             )
+            logger.info(f"Set 'champion' alias on {model_name} v{version}")
             
-            logger.info(f"✅ Promoted {model_name} v{version} to Production")
+            # Clear the model cache so next prediction loads the new model
+            ModelService.clear_cache()
+            
+            # Update metadata file for audit trail
+            try:
+                run = self.client.get_run(run_id)
+                metadata = {
+                    "run_id": run_id,
+                    "model_name": model_name,
+                    "model_version": version,
+                    "deployed_at": datetime.now().isoformat(),
+                    "source": "mlflow_registry",
+                    "metrics": dict(run.data.metrics),
+                    "params": dict(run.data.params)
+                }
+                with open(self.config.PROD_METADATA_PATH, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+                
+                # Update threshold if available
+                threshold = float(run.data.params.get("business_optimal_threshold", self.config.DEFAULT_THRESHOLD))
+                with open(self.config.PROD_THRESHOLD_PATH, 'w') as f:
+                    json.dump({"optimal_threshold": threshold}, f, indent=2)
+                    
+                logger.info(f"Updated metadata for v{version}")
+            except Exception as e:
+                logger.warning(f"Could not update metadata: {e}")
+            
+            logger.info(f"✅ Set champion alias on {model_name} v{version}")
             
             return {
                 "success": True,
-                "message": f"Promoted {model_name} version {version} to Production",
+                "message": f"Deployed {model_name} version {version} as champion",
                 "model_name": model_name,
                 "version": version,
-                "stage": "Production"
+                "run_id": run_id,
+                "alias": "champion"
             }
         
         except Exception as e:

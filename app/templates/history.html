@@ -23,8 +23,9 @@
             margin-bottom: 2rem;
         }
         .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            background: #ffffff;
+            background: var(--bg-white, #ffffff);
+            border: 1px solid var(--border-light, #e2e8f0);
             border-radius: 8px;
             padding: 1rem;
             text-align: center;
@@ -32,15 +33,15 @@
         .stat-value {
             font-size: 1.75rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--primary, #2563eb);
         }
         .stat-label {
             font-size: 0.85rem;
             color: var(--text-muted);
             margin-top: 0.25rem;
         }
-        .stat-card.accepted .stat-value { color: var(--success-color); }
-        .stat-card.rejected .stat-value { color: var(--danger-color); }
+        .stat-card.accepted .stat-value { color: var(--success, #166534); }
+        .stat-card.rejected .stat-value { color: var(--danger, #b91c1c); }
         
         .search-form {
             display: grid;
@@ -66,7 +67,7 @@
         .data-table td {
             padding: 0.75rem 1rem;
             text-align: left;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-light, #e2e8f0);
         }
         .data-table th {
             background: var(--bg-secondary);
@@ -78,7 +79,7 @@
             background: var(--bg-secondary);
         }
         .data-table .client-link {
-            color: var(--primary-color);
+            color: var(--primary, #2563eb);
             text-decoration: none;
             font-weight: 500;
         }
@@ -96,11 +97,11 @@
         }
         .badge-accepted {
             background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
+            color: var(--success, #166534);
         }
         .badge-rejected {
             background: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
+            color: var(--danger, #b91c1c);
         }
         
         .score-bar {
@@ -121,9 +122,9 @@
             border-radius: 4px;
             transition: width 0.3s;
         }
-        .score-bar-fill.low { background: var(--success-color); }
-        .score-bar-fill.medium { background: var(--warning-color); }
-        .score-bar-fill.high { background: var(--danger-color); }
+        .score-bar-fill.low { background: var(--success, #166534); }
+        .score-bar-fill.medium { background: var(--warning, #92400e); }
+        .score-bar-fill.high { background: var(--danger, #b91c1c); }
         
         .pagination {
             display: flex;
@@ -173,6 +174,164 @@
         
         .export-btn {
             margin-left: auto;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #ffffff;
+            background: var(--bg-white, #ffffff);
+            border-radius: 12px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-light, #e2e8f0);
+            position: sticky;
+            top: 0;
+            background: #ffffff;
+            background: var(--bg-white, #ffffff);
+            z-index: 1;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: var(--text-color);
+        }
+        .modal-body {
+            padding: 1.5rem;
+        }
+        .prediction-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .detail-item {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .detail-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .detail-value.accepted { color: var(--success, #166534); }
+        .detail-value.rejected { color: var(--danger, #b91c1c); }
+        
+        .shap-section {
+            margin-top: 1.5rem;
+        }
+        .shap-section h4 {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        .shap-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .shap-feature {
+            width: 200px;
+            text-align: right;
+            padding-right: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .shap-bar-container {
+            flex: 1;
+            height: 20px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .shap-bar-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-light, #e2e8f0);
+        }
+        .shap-bar-fill {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            border-radius: 2px;
+        }
+        .shap-bar-fill.positive {
+            background: var(--danger);
+            left: 50%;
+        }
+        .shap-bar-fill.negative {
+            background: var(--success);
+            right: 50%;
+        }
+        .shap-value {
+            width: 80px;
+            text-align: left;
+            padding-left: 0.5rem;
+            font-family: monospace;
+        }
+        .shap-value.positive { color: var(--danger); }
+        .shap-value.negative { color: var(--success); }
+        
+        .model-info {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+        .model-info code {
+            background: #ffffff;
+            background: var(--bg-white, #ffffff);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -398,6 +557,26 @@
         </footer>
     </div>
 
+    <!-- Prediction Detail Modal -->
+    <div class="modal-overlay" id="predictionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Prediction Details
+                </h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="text-center">Loading...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State
         let currentOffset = 0;
@@ -472,7 +651,7 @@
             } catch (error) {
                 console.error('Failed to load predictions:', error);
                 document.getElementById('resultsBody').innerHTML = `
-                    <tr><td colspan="7" style="text-align: center; color: var(--danger-color);">
+                    <tr><td colspan="7" style="text-align: center; color: var(--danger, #b91c1c);">
                         Error loading data: ${error.message}
                     </td></tr>
                 `;
@@ -529,7 +708,7 @@
                         <td>${p.request_source || 'api'}</td>
                         <td>${date}</td>
                         <td>
-                            <a href="/predict?client_id=${p.client_id}" class="btn btn-sm btn-secondary">View</a>
+                            <button class="btn btn-sm btn-primary" onclick="viewPrediction(${p.id})">View</button>
                         </td>
                     </tr>
                 `;
@@ -600,6 +779,175 @@
         // Mobile menu toggle
         function toggleMobileMenu() {
             document.querySelector('.nav-links').classList.toggle('active');
+        }
+
+        // Modal functions
+        function closeModal() {
+            document.getElementById('predictionModal').classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('predictionModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // View prediction details
+        async function viewPrediction(predictionId) {
+            const modal = document.getElementById('predictionModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            modal.classList.add('active');
+            modalBody.innerHTML = '<div class="text-center" style="padding: 2rem;">Loading prediction details...</div>';
+            
+            try {
+                const response = await fetch(`/api/predictions/${predictionId}`);
+                if (!response.ok) throw new Error('Prediction not found');
+                
+                const data = await response.json();
+                modalBody.innerHTML = renderPredictionDetails(data);
+            } catch (error) {
+                modalBody.innerHTML = `
+                    <div class="text-center" style="padding: 2rem; color: var(--danger, #b91c1c);">
+                        Error loading prediction: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Render prediction details
+        function renderPredictionDetails(prediction) {
+            const score = prediction.probability || 0;
+            const decision = prediction.decision || '-';
+            const isAccepted = decision === 'ACCEPTED';
+            const date = prediction.created_at ? new Date(prediction.created_at).toLocaleString() : '-';
+            
+            // Build SHAP section
+            let shapHtml = '';
+            if (prediction.shap_values && Object.keys(prediction.shap_values).length > 0) {
+                const shapEntries = Object.entries(prediction.shap_values);
+                // Sort by absolute value
+                shapEntries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+                
+                // Get max absolute value for scaling
+                const maxAbsValue = Math.max(...shapEntries.map(([_, v]) => Math.abs(v)));
+                
+                // Take top 15 features
+                const topFeatures = shapEntries.slice(0, 15);
+                
+                shapHtml = `
+                    <div class="shap-section">
+                        <h4>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                                <path d="M12 20V10"></path>
+                                <path d="M18 20V4"></path>
+                                <path d="M6 20v-4"></path>
+                            </svg>
+                            SHAP Values (Feature Importance)
+                        </h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                            Red bars increase risk (rejection), green bars decrease risk (approval)
+                        </p>
+                        ${topFeatures.map(([feature, value]) => {
+                            const isPositive = value > 0;
+                            const barWidth = Math.min((Math.abs(value) / maxAbsValue) * 50, 50);
+                            return `
+                                <div class="shap-bar">
+                                    <div class="shap-feature" title="${feature}">${feature}</div>
+                                    <div class="shap-bar-container">
+                                        <div class="shap-bar-center"></div>
+                                        <div class="shap-bar-fill ${isPositive ? 'positive' : 'negative'}" 
+                                             style="width: ${barWidth}%;"></div>
+                                    </div>
+                                    <div class="shap-value ${isPositive ? 'positive' : 'negative'}">
+                                        ${isPositive ? '+' : ''}${value.toFixed(4)}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                        ${shapEntries.length > 15 ? `<p style="text-align: center; color: var(--text-muted); margin-top: 1rem;">... and ${shapEntries.length - 15} more features</p>` : ''}
+                    </div>
+                `;
+            } else {
+                shapHtml = `
+                    <div class="shap-section">
+                        <h4>SHAP Values</h4>
+                        <p style="color: var(--text-muted);">No SHAP values stored for this prediction</p>
+                    </div>
+                `;
+            }
+            
+            // Build input features section (collapsed by default)
+            let inputFeaturesHtml = '';
+            if (prediction.input_features && Object.keys(prediction.input_features).length > 0) {
+                const featuresCount = Object.keys(prediction.input_features).length;
+                inputFeaturesHtml = `
+                    <details style="margin-top: 1rem;">
+                        <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem;">
+                            Input Features (${featuresCount} features)
+                        </summary>
+                        <div style="max-height: 300px; overflow-y: auto; font-size: 0.8rem; background: var(--bg-secondary); padding: 1rem; border-radius: 8px; font-family: monospace;">
+                            ${Object.entries(prediction.input_features).map(([k, v]) => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border-light, #e2e8f0);">
+                                    <span>${k}</span>
+                                    <span>${v !== null ? v : 'null'}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>
+                `;
+            }
+            
+            return `
+                <div class="prediction-detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Client ID</div>
+                        <div class="detail-value">
+                            <a href="/predict?client_id=${prediction.client_id}" style="color: var(--primary, #2563eb);">${prediction.client_id}</a>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Decision</div>
+                        <div class="detail-value ${isAccepted ? 'accepted' : 'rejected'}">${decision}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Risk Score</div>
+                        <div class="detail-value">${(score * 100).toFixed(2)}%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Threshold</div>
+                        <div class="detail-value">${prediction.threshold ? (prediction.threshold * 100).toFixed(0) : '-'}%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Prediction Date</div>
+                        <div class="detail-value" style="font-size: 0.95rem;">${date}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Model Version</div>
+                        <div class="detail-value">${prediction.model_version || '-'}</div>
+                    </div>
+                </div>
+                
+                ${prediction.model_id ? `
+                    <div class="model-info">
+                        <strong>Model ID:</strong> <code>${prediction.model_id}</code>
+                        <a href="/api/audit/model/${prediction.model_id}" target="_blank" style="margin-left: 1rem; color: var(--primary, #2563eb);">
+                            View Model Audit →
+                        </a>
+                    </div>
+                ` : ''}
+                
+                ${shapHtml}
+                ${inputFeaturesHtml}
+            `;
         }
     </script>
 </body>

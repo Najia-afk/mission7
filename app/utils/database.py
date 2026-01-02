@@ -72,16 +72,19 @@ def get_client_from_postgres(client_id: int) -> pd.DataFrame:
     """
     session = get_postgres_session()
     try:
+        logger.info(f"Fetching client {client_id} from Postgres...")
         # Try application_train first
         query = text('SELECT * FROM application_train WHERE "SK_ID_CURR" = :client_id')
         result = session.execute(query, {"client_id": client_id})
         rows = result.fetchall()
+        logger.info(f"Found {len(rows)} rows in application_train")
         
         if not rows:
             # Try application_test
             query = text('SELECT * FROM application_test WHERE "SK_ID_CURR" = :client_id')
             result = session.execute(query, {"client_id": client_id})
             rows = result.fetchall()
+            logger.info(f"Found {len(rows)} rows in application_test")
         
         if rows:
             columns = result.keys()
@@ -101,7 +104,8 @@ def log_prediction_to_postgres(
     decision: str,
     model_id: Optional[str] = None,
     model_version: Optional[str] = None,
-    shap_values: Optional[dict] = None
+    shap_values: Optional[dict] = None,
+    input_features: Optional[dict] = None
 ) -> bool:
     """
     Log prediction to PostgreSQL for drift monitoring and audit.
@@ -114,6 +118,7 @@ def log_prediction_to_postgres(
         model_id: Model ID (run_id from prod_models/metadata.json)
         model_version: Optional model version string
         shap_values: Optional dict of top SHAP values for debugging
+        input_features: Optional dict of input features
         
     Returns:
         True if logged successfully, False otherwise
@@ -124,35 +129,34 @@ def log_prediction_to_postgres(
     
     session = get_postgres_session()
     try:
-        # Use JSON column if shap_values provided
-        if shap_values:
-            import json
-            query = text("""
-                INSERT INTO predictions (client_id, probability, threshold, decision, model_id, model_version, request_source, shap_values, created_at)
-                VALUES (:client_id, :probability, :threshold, :decision, :model_id, :model_version, 'api', CAST(:shap_values AS JSONB), NOW())
-            """)
-            session.execute(query, {
-                "client_id": client_id,
-                "probability": probability,
-                "threshold": threshold,
-                "decision": decision,
-                "model_id": model_id,
-                "model_version": model_version,
-                "shap_values": json.dumps(shap_values)
-            })
-        else:
-            query = text("""
-                INSERT INTO predictions (client_id, probability, threshold, decision, model_id, model_version, request_source, created_at)
-                VALUES (:client_id, :probability, :threshold, :decision, :model_id, :model_version, 'api', NOW())
-            """)
-            session.execute(query, {
-                "client_id": client_id,
-                "probability": probability,
-                "threshold": threshold,
-                "decision": decision,
-                "model_id": model_id,
-                "model_version": model_version
-            })
+        import json
+        
+        # Prepare values
+        values = {
+            "client_id": client_id,
+            "probability": probability,
+            "threshold": threshold,
+            "decision": decision,
+            "model_id": model_id,
+            "model_version": model_version,
+            "shap_values": json.dumps(shap_values) if shap_values else None,
+            "input_features": json.dumps(input_features) if input_features else None
+        }
+        
+        query = text("""
+            INSERT INTO predictions (
+                client_id, probability, threshold, decision, 
+                model_id, model_version, request_source, 
+                shap_values, input_features, created_at
+            )
+            VALUES (
+                :client_id, :probability, :threshold, :decision, 
+                :model_id, :model_version, 'api', 
+                CAST(:shap_values AS JSONB), CAST(:input_features AS JSONB), NOW()
+            )
+        """)
+        
+        session.execute(query, values)
         session.commit()
         logger.debug(f"Prediction logged for client {client_id}: {decision} (model: {model_id})")
         return True
@@ -271,7 +275,7 @@ def search_predictions(
         
         # Get data with model_id
         data_query = text(f"""
-            SELECT client_id, probability, threshold, decision, 
+            SELECT id, client_id, probability, threshold, decision, 
                    model_id, model_version, request_source, created_at
             FROM predictions 
             WHERE {where_clause}
@@ -338,5 +342,44 @@ def get_prediction_stats() -> dict:
     except Exception as e:
         logger.error(f"Error getting prediction stats: {e}")
         return {}
+    finally:
+        session.close()
+
+
+def get_prediction_by_id(prediction_id: int) -> dict:
+    """Get a single prediction with all details including SHAP values."""
+    config = get_config()
+    if not config.USE_POSTGRES:
+        return None
+    
+    session = get_postgres_session()
+    try:
+        query = text("""
+            SELECT 
+                id, client_id, probability, decision, threshold, 
+                input_features, shap_values, created_at,
+                model_id, model_version
+            FROM predictions
+            WHERE id = :prediction_id
+        """)
+        result = session.execute(query, {"prediction_id": prediction_id}).fetchone()
+        
+        if result:
+            return {
+                "id": result.id,
+                "client_id": result.client_id,
+                "probability": float(result.probability) if result.probability else None,
+                "decision": result.decision,
+                "threshold": float(result.threshold) if result.threshold else None,
+                "input_features": result.input_features,
+                "shap_values": result.shap_values,
+                "created_at": result.created_at.isoformat() if result.created_at else None,
+                "model_id": result.model_id,
+                "model_version": result.model_version
+            }
+        return None
+    except Exception as e:
+        logger.error(f"Error getting prediction by id: {e}")
+        return None
     finally:
         session.close()
