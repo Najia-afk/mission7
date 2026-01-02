@@ -62,5 +62,15 @@ else
     echo "⚠️ Warning: sync_artifacts_to_db.py not found"
 fi
 
+# Register model in MLflow for experiment tracking
+if [ -f "/app/app/scripts/register_model_mlflow.py" ]; then
+    echo "📊 Registering model in MLflow..."
+    python /app/app/scripts/register_model_mlflow.py --prod-models-dir /app/prod_models || {
+        echo "⚠️ Warning: MLflow registration failed (non-fatal)"
+    }
+else
+    echo "ℹ️ MLflow registration script not found; skipping"
+fi
+
 echo "🌐 Starting Gunicorn server..."
 exec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 app.wsgi:app
