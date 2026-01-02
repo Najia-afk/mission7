@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Scoring - Prêt à dépenser | Prediction History</title>
+    <meta name="description" content="Search and view prediction history for audit and analysis">
+    
+    <!-- Modular CSS Architecture -->
+    <link rel="stylesheet" href="/static/styles/variables.css">
+    <link rel="stylesheet" href="/static/styles/base.css">
+    <link rel="stylesheet" href="/static/styles/layout.css">
+    <link rel="stylesheet" href="/static/styles/header.css">
+    <link rel="stylesheet" href="/static/styles/footer.css">
+    <link rel="stylesheet" href="/static/styles/components.css">
+    <link rel="stylesheet" href="/static/styles/responsive.css">
+    
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+        .stat-card.accepted .stat-value { color: var(--success-color); }
+        .stat-card.rejected .stat-value { color: var(--danger-color); }
+        
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .search-form .form-group {
+            margin-bottom: 0;
+        }
+        .search-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: end;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .data-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        .data-table tr:hover {
+            background: var(--bg-secondary);
+        }
+        .data-table .client-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .data-table .client-link:hover {
+            text-decoration: underline;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-accepted {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+        .badge-rejected {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .score-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .score-bar-bg {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 100px;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .score-bar-fill.low { background: var(--success-color); }
+        .score-bar-fill.medium { background: var(--warning-color); }
+        .score-bar-fill.high { background: var(--danger-color); }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .pagination-info {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+        .no-data svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .export-btn {
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+    
+    <div class="app-wrapper">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <nav>
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Prêt à dépenser
+                    </a>
+                    <div class="nav-links">
+                        <a href="/">Home</a>
+                        <a href="/predict">Predict (Client)</a>
+                        <a href="/predict-test">Predict (Test)</a>
+                        <a href="/simulator">Simulator</a>
+                        <a href="/history" class="active">History</a>
+                        <a href="/audit">Audit</a>
+                        <span class="nav-divider"></span>
+                        <a href="/runs">Runs</a>
+                        <a href="/dashboard">Dashboard</a>
+                        <span class="nav-divider"></span>
+                        <a href="/api/docs" target="_blank">API <span class="nav-badge">Swagger</span></a>
+                        <a href="/mlflow/" target="_blank">MLflow</a>
+                    </div>
+                    <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Page Banner -->
+        <div class="page-banner">
+            <div class="container">
+                <div>
+                    <h1>
+                        <svg class="banner-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                        </svg>
+                        Prediction History
+                    </h1>
+                    <p>Search, filter and analyze all credit scoring predictions</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <div class="container">
+                
+                <!-- Statistics Cards -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">-</div>
+                        <div class="stat-label">Total Predictions</div>
+                    </div>
+                    <div class="stat-card accepted">
+                        <div class="stat-value" id="statAccepted">-</div>
+                        <div class="stat-label">Accepted</div>
+                    </div>
+                    <div class="stat-card rejected">
+                        <div class="stat-value" id="statRejected">-</div>
+                        <div class="stat-label">Rejected</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statApprovalRate">-</div>
+                        <div class="stat-label">Approval Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statAvgScore">-</div>
+                        <div class="stat-label">Avg Risk Score</div>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Search & Filter</h3>
+                        <button class="btn btn-secondary export-btn" onclick="exportCSV()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export CSV
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form id="searchForm" class="search-form">
+                            <div class="form-group">
+                                <label class="form-label">Client ID</label>
+                                <input type="number" class="form-control" id="filterClientId" placeholder="e.g. 100001">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Decision</label>
+                                <select class="form-control" id="filterDecision">
+                                    <option value="">All</option>
+                                    <option value="ACCEPTED">Accepted</option>
+                                    <option value="REJECTED">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Min Score</label>
+                                <input type="number" class="form-control" id="filterMinScore" placeholder="0.0" min="0" max="1" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Max Score</label>
+                                <input type="number" class="form-control" id="filterMaxScore" placeholder="1.0" min="0" max="1" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="filterStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="filterEndDate">
+                            </div>
+                            <div class="search-actions">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                                <button type="button" class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="card" style="position: relative;">
+                    <div class="card-header">
+                        <h3 class="card-title">Results <span id="resultCount" class="text-muted"></span></h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="loading-overlay" id="loadingOverlay">
+                            <div class="spinner"></div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table class="data-table" id="resultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Client ID</th>
+                                        <th>Decision</th>
+                                        <th>Risk Score</th>
+                                        <th>Threshold</th>
+                                        <th>Source</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsBody">
+                                    <!-- Data populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="no-data" id="noData" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                            </svg>
+                            <p>No predictions found</p>
+                            <p class="text-muted">Try adjusting your search filters</p>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="pagination" id="pagination">
+                            <button class="btn btn-secondary" id="prevBtn" onclick="prevPage()" disabled>
+                                ← Previous
+                            </button>
+                            <span class="pagination-info" id="paginationInfo">Page 1</span>
+                            <button class="btn btn-secondary" id="nextBtn" onclick="nextPage()" disabled>
+                                Next →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <div class="footer-logo">
+                            <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <span>Prêt à dépenser</span>
+                        </div>
+                        <p>Credit scoring solution for responsible lending</p>
+                    </div>
+                    <div class="footer-links">
+                        <div class="footer-section">
+                            <h4>Application</h4>
+                            <a href="/predict">Client Prediction</a>
+                            <a href="/simulator">Simulator</a>
+                            <a href="/history">History</a>
+                        </div>
+                        <div class="footer-section">
+                            <h4>Documentation</h4>
+                            <a href="/api/docs">API Documentation</a>
+                            <a href="/audit">Audit Report</a>
+                            <a href="/mlflow/">MLflow Registry</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>© 2025-2026 Prêt à dépenser. BCE/FINMA Compliant.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // State
+        let currentOffset = 0;
+        const pageSize = 50;
+        let totalResults = 0;
+        let currentData = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadPredictions();
+        });
+
+        // Search form handler
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentOffset = 0;
+            loadPredictions();
+        });
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/predictions/stats');
+                const data = await response.json();
+                
+                document.getElementById('statTotal').textContent = data.total?.toLocaleString() || '0';
+                document.getElementById('statAccepted').textContent = data.accepted?.toLocaleString() || '0';
+                document.getElementById('statRejected').textContent = data.rejected?.toLocaleString() || '0';
+                document.getElementById('statApprovalRate').textContent = data.approval_rate ? `${data.approval_rate.toFixed(1)}%` : '0%';
+                document.getElementById('statAvgScore').textContent = data.avg_score ? data.avg_score.toFixed(3) : '-';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Load predictions
+        async function loadPredictions() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('active');
+            
+            try {
+                const params = new URLSearchParams();
+                
+                const clientId = document.getElementById('filterClientId').value;
+                const decision = document.getElementById('filterDecision').value;
+                const minScore = document.getElementById('filterMinScore').value;
+                const maxScore = document.getElementById('filterMaxScore').value;
+                const startDate = document.getElementById('filterStartDate').value;
+                const endDate = document.getElementById('filterEndDate').value;
+                
+                if (clientId) params.append('client_id', clientId);
+                if (decision) params.append('decision', decision);
+                if (minScore) params.append('min_score', minScore);
+                if (maxScore) params.append('max_score', maxScore);
+                if (startDate) params.append('start_date', startDate);
+                if (endDate) params.append('end_date', endDate);
+                params.append('limit', pageSize);
+                params.append('offset', currentOffset);
+                
+                const response = await fetch(`/api/predictions/search?${params}`);
+                const data = await response.json();
+                
+                currentData = data.predictions || [];
+                totalResults = data.total || 0;
+                
+                renderTable(currentData);
+                updatePagination(data);
+                
+                document.getElementById('resultCount').textContent = `(${totalResults.toLocaleString()} total)`;
+                
+            } catch (error) {
+                console.error('Failed to load predictions:', error);
+                document.getElementById('resultsBody').innerHTML = `
+                    <tr><td colspan="7" style="text-align: center; color: var(--danger-color);">
+                        Error loading data: ${error.message}
+                    </td></tr>
+                `;
+            } finally {
+                overlay.classList.remove('active');
+            }
+        }
+
+        // Render table
+        function renderTable(predictions) {
+            const tbody = document.getElementById('resultsBody');
+            const noData = document.getElementById('noData');
+            const table = document.getElementById('resultsTable');
+            
+            if (!predictions || predictions.length === 0) {
+                tbody.innerHTML = '';
+                noData.style.display = 'block';
+                table.style.display = 'none';
+                return;
+            }
+            
+            noData.style.display = 'none';
+            table.style.display = 'table';
+            
+            tbody.innerHTML = predictions.map(p => {
+                const score = p.probability || 0;
+                const scoreClass = score < 0.3 ? 'low' : score < 0.6 ? 'medium' : 'high';
+                const date = p.created_at ? new Date(p.created_at).toLocaleString() : '-';
+                
+                return `
+                    <tr>
+                        <td>
+                            <a href="/predict?client_id=${p.client_id}" class="client-link">${p.client_id}</a>
+                        </td>
+                        <td>
+                            <span class="badge badge-${p.decision?.toLowerCase()}">${p.decision || '-'}</span>
+                        </td>
+                        <td>
+                            <div class="score-bar">
+                                <span>${(score * 100).toFixed(1)}%</span>
+                                <div class="score-bar-bg">
+                                    <div class="score-bar-fill ${scoreClass}" style="width: ${score * 100}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${(p.threshold * 100).toFixed(0)}%</td>
+                        <td>${p.request_source || 'api'}</td>
+                        <td>${date}</td>
+                        <td>
+                            <a href="/predict?client_id=${p.client_id}" class="btn btn-sm btn-secondary">View</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Pagination
+        function updatePagination(data) {
+            const currentPage = Math.floor(currentOffset / pageSize) + 1;
+            const totalPages = Math.ceil(data.total / pageSize);
+            
+            document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevBtn').disabled = currentOffset === 0;
+            document.getElementById('nextBtn').disabled = !data.has_more;
+        }
+
+        function prevPage() {
+            if (currentOffset >= pageSize) {
+                currentOffset -= pageSize;
+                loadPredictions();
+            }
+        }
+
+        function nextPage() {
+            currentOffset += pageSize;
+            loadPredictions();
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filterClientId').value = '';
+            document.getElementById('filterDecision').value = '';
+            document.getElementById('filterMinScore').value = '';
+            document.getElementById('filterMaxScore').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            currentOffset = 0;
+            loadPredictions();
+        }
+
+        // Export to CSV
+        function exportCSV() {
+            if (!currentData || currentData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            const headers = ['Client ID', 'Decision', 'Probability', 'Threshold', 'Source', 'Date'];
+            const rows = currentData.map(p => [
+                p.client_id,
+                p.decision,
+                p.probability,
+                p.threshold,
+                p.request_source,
+                p.created_at
+            ]);
+            
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `predictions_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

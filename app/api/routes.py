@@ -66,6 +66,12 @@ def dashboard_page():
     return render_template('dashboard.html')
 
 
+@api_bp.route('/history')
+def history_page():
+    """Render prediction history page."""
+    return render_template('history.html')
+
+
 # =============================================================================
 # HEALTH & STATUS
 # =============================================================================
@@ -476,3 +482,126 @@ def rollback_model():
     if result.get('error'):
         return jsonify(result), 404
     return jsonify(result)
+
+
+# =============================================================================
+# PREDICTION HISTORY
+# =============================================================================
+
+@api_bp.route('/api/predictions/search')
+def search_predictions_api():
+    """
+    Search prediction history with filters
+    ---
+    tags:
+      - Predictions
+    parameters:
+      - name: client_id
+        in: query
+        type: integer
+        required: false
+        description: Filter by client ID
+      - name: decision
+        in: query
+        type: string
+        enum: [ACCEPTED, REJECTED]
+        required: false
+        description: Filter by decision
+      - name: min_score
+        in: query
+        type: number
+        required: false
+        description: Minimum probability score (0-1)
+      - name: max_score
+        in: query
+        type: number
+        required: false
+        description: Maximum probability score (0-1)
+      - name: start_date
+        in: query
+        type: string
+        required: false
+        description: Start date (ISO format)
+      - name: end_date
+        in: query
+        type: string
+        required: false
+        description: End date (ISO format)
+      - name: limit
+        in: query
+        type: integer
+        default: 50
+        description: Max results per page
+      - name: offset
+        in: query
+        type: integer
+        default: 0
+        description: Pagination offset
+    responses:
+      200:
+        description: Search results
+        schema:
+          type: object
+          properties:
+            predictions:
+              type: array
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            has_more:
+              type: boolean
+    """
+    from app.utils.database import search_predictions
+    
+    client_id = request.args.get('client_id', type=int)
+    decision = request.args.get('decision')
+    min_score = request.args.get('min_score', type=float)
+    max_score = request.args.get('max_score', type=float)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    limit = request.args.get('limit', 50, type=int)
+    offset = request.args.get('offset', 0, type=int)
+    
+    result = search_predictions(
+        client_id=client_id,
+        decision=decision,
+        min_score=min_score,
+        max_score=max_score,
+        start_date=start_date,
+        end_date=end_date,
+        limit=min(limit, 500),  # Cap at 500
+        offset=offset
+    )
+    
+    return jsonify(result)
+
+
+@api_bp.route('/api/predictions/stats')
+def prediction_stats_api():
+    """
+    Get prediction statistics
+    ---
+    tags:
+      - Predictions
+    responses:
+      200:
+        description: Prediction statistics
+        schema:
+          type: object
+          properties:
+            total:
+              type: integer
+            accepted:
+              type: integer
+            rejected:
+              type: integer
+            approval_rate:
+              type: number
+            avg_score:
+              type: number
+    """
+    from app.utils.database import get_prediction_stats
+    return jsonify(get_prediction_stats())

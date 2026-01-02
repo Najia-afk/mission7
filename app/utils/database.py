@@ -197,3 +197,142 @@ def get_prediction_history(limit: int = 100) -> list:
         return []
     finally:
         session.close()
+
+
+def search_predictions(
+    client_id: int = None,
+    decision: str = None,
+    min_score: float = None,
+    max_score: float = None,
+    start_date: str = None,
+    end_date: str = None,
+    limit: int = 100,
+    offset: int = 0
+) -> dict:
+    """
+    Search predictions with filters.
+    
+    Args:
+        client_id: Filter by client ID
+        decision: Filter by decision (ACCEPTED/REJECTED)
+        min_score: Minimum probability score
+        max_score: Maximum probability score
+        start_date: Start date (ISO format)
+        end_date: End date (ISO format)
+        limit: Max results per page
+        offset: Pagination offset
+        
+    Returns:
+        Dict with predictions and pagination info
+    """
+    config = get_config()
+    if not config.USE_POSTGRES:
+        return {"predictions": [], "total": 0, "limit": limit, "offset": offset}
+    
+    session = get_postgres_session()
+    try:
+        # Build dynamic WHERE clause
+        conditions = []
+        params = {"limit": limit, "offset": offset}
+        
+        if client_id is not None:
+            conditions.append("client_id = :client_id")
+            params["client_id"] = client_id
+        
+        if decision:
+            conditions.append("decision = :decision")
+            params["decision"] = decision.upper()
+        
+        if min_score is not None:
+            conditions.append("probability >= :min_score")
+            params["min_score"] = min_score
+        
+        if max_score is not None:
+            conditions.append("probability <= :max_score")
+            params["max_score"] = max_score
+        
+        if start_date:
+            conditions.append("created_at >= :start_date")
+            params["start_date"] = start_date
+        
+        if end_date:
+            conditions.append("created_at <= :end_date")
+            params["end_date"] = end_date
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        # Count total
+        count_query = text(f"SELECT COUNT(*) FROM predictions WHERE {where_clause}")
+        total = session.execute(count_query, params).scalar()
+        
+        # Get data
+        data_query = text(f"""
+            SELECT client_id, probability, threshold, decision, 
+                   model_version, request_source, created_at
+            FROM predictions 
+            WHERE {where_clause}
+            ORDER BY created_at DESC 
+            LIMIT :limit OFFSET :offset
+        """)
+        result = session.execute(data_query, params)
+        predictions = [dict(row._mapping) for row in result.fetchall()]
+        
+        # Convert datetime to ISO format
+        for pred in predictions:
+            if pred.get('created_at'):
+                pred['created_at'] = pred['created_at'].isoformat()
+        
+        return {
+            "predictions": predictions,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "has_more": (offset + limit) < total
+        }
+    except Exception as e:
+        logger.error(f"Error searching predictions: {e}")
+        return {"predictions": [], "total": 0, "limit": limit, "offset": offset, "error": str(e)}
+    finally:
+        session.close()
+
+
+def get_prediction_stats() -> dict:
+    """Get prediction statistics for dashboard."""
+    config = get_config()
+    if not config.USE_POSTGRES:
+        return {}
+    
+    session = get_postgres_session()
+    try:
+        query = text("""
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN decision = 'ACCEPTED' THEN 1 ELSE 0 END) as accepted,
+                SUM(CASE WHEN decision = 'REJECTED' THEN 1 ELSE 0 END) as rejected,
+                AVG(probability) as avg_score,
+                MIN(probability) as min_score,
+                MAX(probability) as max_score,
+                MIN(created_at) as first_prediction,
+                MAX(created_at) as last_prediction
+            FROM predictions
+        """)
+        result = session.execute(query).fetchone()
+        
+        if result:
+            return {
+                "total": result.total or 0,
+                "accepted": result.accepted or 0,
+                "rejected": result.rejected or 0,
+                "approval_rate": (result.accepted / result.total * 100) if result.total else 0,
+                "avg_score": round(result.avg_score, 4) if result.avg_score else 0,
+                "min_score": round(result.min_score, 4) if result.min_score else 0,
+                "max_score": round(result.max_score, 4) if result.max_score else 0,
+                "first_prediction": result.first_prediction.isoformat() if result.first_prediction else None,
+                "last_prediction": result.last_prediction.isoformat() if result.last_prediction else None
+            }
+        return {}
+    except Exception as e:
+        logger.error(f"Error getting prediction stats: {e}")
+        return {}
+    finally:
+        session.close()
