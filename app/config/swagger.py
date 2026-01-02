@@ -29,9 +29,16 @@ Production-grade API for credit scoring predictions with full audit trail.
 
 ### Features
 - **Real-time Predictions**: Get credit risk scores with SHAP explanations
-- **Model Governance**: Full audit trail for regulatory compliance
+- **Human-readable SHAP**: Feature values displayed intuitively (e.g., "918.5K$", "42.6 yrs")
+- **Model Governance**: Full audit trail for regulatory compliance (BCE/FINMA)
 - **Feature Documentation**: 125 features documented with categories
 - **Drift Monitoring**: Evidently-based data drift reports
+- **Download Artifacts**: Export reports for offline audit
+
+### Audit Endpoints
+- `/api/audit/model-governance` - Full governance documentation
+- `/api/audit/predictions` - Prediction audit log from PostgreSQL
+- `/api/audit/download/<type>` - Download artifacts (drift_report_html, drift_report_json, metadata)
 
 ### Authentication
 Currently open API. Production should add JWT authentication.
@@ -40,7 +47,7 @@ Currently open API. Production should add JWT authentication.
 - 100 requests/minute per IP
 - 1000 requests/hour per IP
         """,
-        "version": "2.0.0",
+        "version": "2.1.0",
         "contact": {
             "name": "Mission7 MLOps Team",
             "email": "mlops@mission7.com"

@@ -8,6 +8,12 @@
 
 Production-grade credit scoring API with full MLOps pipeline, SHAP explainability, and regulatory audit trail.
 
+### ✨ Key Features
+- **Human-readable SHAP**: Feature values displayed in intuitive formats (e.g., "918.5K$" for Credit Amount, "42.6 yrs" for Age)
+- **PostgreSQL Audit Trail**: All predictions logged with SHAP values for regulatory compliance
+- **Download Artifacts**: Export drift reports and metadata directly from the API
+- **Dynamic Data**: All audit pages pull live data from the database
+
 ---
 
 ## 📁 Project Structure
@@ -143,11 +149,19 @@ curl http://localhost/api/audit/model-card
 # Feature documentation (125 features)
 curl http://localhost/api/audit/features
 
-# Data drift report
+# Data drift report (JSON)
 curl http://localhost/api/audit/drift-report
 
-# Evidently HTML report
+# Evidently HTML report (browser)
 open http://localhost/api/audit/drift-report-html
+
+# Download artifacts (for audit compliance)
+curl -O http://localhost/api/audit/download/drift_report_html
+curl -O http://localhost/api/audit/download/drift_report_json
+curl -O http://localhost/api/audit/download/metadata
+
+# Prediction audit log (from PostgreSQL)
+curl http://localhost/api/audit/predictions
 ```
 
 ### Model Management
