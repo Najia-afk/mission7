@@ -142,6 +142,9 @@
 
     <script src="/static/js/app.js"></script>
     <script>
+        // Store experiment ID globally
+        let mlflowExperimentId = null;
+
         // Load current model info
         async function loadCurrentModel() {
             try {
@@ -160,6 +163,19 @@
             } catch (err) {
                 console.error('Failed to load current model:', err);
                 document.getElementById('currentModelName').textContent = 'Error loading';
+            }
+        }
+
+        // Get MLflow experiment ID
+        async function getExperimentId() {
+            try {
+                const response = await fetch('/mlflow/api/2.0/mlflow/experiments/search?max_results=10');
+                const data = await response.json();
+                if (data.experiments && data.experiments.length > 0) {
+                    mlflowExperimentId = data.experiments[0].experiment_id;
+                }
+            } catch (err) {
+                console.error('Failed to get experiment ID:', err);
             }
         }
 
@@ -190,6 +206,7 @@
                             version: meta.model_version || model.version || '-',
                             registryVersion: model.source === 'mlflow' ? model.version : null,
                             runId: model.run_id || meta.run_id,
+                            experimentId: mlflowExperimentId,
                             metrics: meta.metrics || {},
                             stage: model.stage,
                             isDeployed: model.active
@@ -247,15 +264,9 @@
                         ${model.registryName ? `
                             <a href="/mlflow/#/models/${encodeURIComponent(model.registryName)}${model.registryVersion ? '/versions/' + model.registryVersion : ''}" target="_blank" 
                                class="btn btn-secondary btn-sm flex-1">MLflow Registry</a>
-                        ` : model.runId ? `
-                            <a href="/mlflow/#/experiments/0/runs/${model.runId}" target="_blank" 
+                        ` : model.runId && model.experimentId ? `
+                            <a href="/mlflow/#/experiments/${model.experimentId}/runs/${model.runId}" target="_blank" 
                                class="btn btn-secondary btn-sm flex-1">View Run</a>
-                        ` : ''}
-                        ${!model.isDeployed ? `
-                            <button class="btn btn-primary btn-sm flex-1" 
-                                    onclick="deployModel('${model.runId || ''}', '${model.name}', '${model.version}')">
-                                Deploy
-                            </button>
                         ` : ''}
                     </div>
                 </div>
@@ -317,8 +328,12 @@
         }
 
         // Initialize
-        loadCurrentModel();
-        loadModels();
+        async function init() {
+            await getExperimentId();
+            loadCurrentModel();
+            loadModels();
+        }
+        init();
     </script>
 
     <style>
