@@ -264,6 +264,12 @@
                         ${model.registryName ? `
                             <a href="/mlflow/#/models/${encodeURIComponent(model.registryName)}${model.registryVersion ? '/versions/' + model.registryVersion : ''}" target="_blank" 
                                class="btn btn-secondary btn-sm flex-1">MLflow Registry</a>
+                            ${!model.isDeployed ? `
+                            <button class="btn btn-primary btn-sm flex-1" 
+                                    onclick="promoteVersion('${model.registryName}', '${model.registryVersion}')">
+                                Deploy
+                            </button>
+                            ` : ''}
                         ` : model.runId && model.experimentId ? `
                             <a href="/mlflow/#/experiments/${model.experimentId}/runs/${model.runId}" target="_blank" 
                                class="btn btn-secondary btn-sm flex-1">View Run</a>
@@ -322,6 +328,33 @@
                 } else {
                     showToast('Rollback failed: ' + data.error, 'error');
                 }
+            } catch (err) {
+                showToast('Rollback error: ' + err.message, 'error');
+            }
+        }
+
+        async function promoteVersion(modelName, version) {
+            if (!confirm(`Promote ${modelName} version ${version} to Production?`)) return;
+            
+            try {
+                const response = await fetch('/api/models/promote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model_name: modelName, version: version })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast(`Version ${version} promoted to Production!`, 'success');
+                    loadModels();
+                } else {
+                    showToast('Promotion failed: ' + data.error, 'error');
+                }
+            } catch (err) {
+                showToast('Promotion error: ' + err.message, 'error');
+            }
+        }
             } catch (err) {
                 showToast('Rollback error: ' + err.message, 'error');
             }

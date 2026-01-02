@@ -390,3 +390,45 @@ class ModelService:
             "message": f"Rolled back to {backup_name}",
             "previous_saved_as": current_backup
         }
+
+    def promote_version(
+        self,
+        model_name: str,
+        version: str
+    ) -> Dict[str, Any]:
+        """Promote a model version to Production stage in MLflow."""
+        try:
+            # First, demote any current Production versions to Archived
+            try:
+                versions = self.client.search_model_versions(f"name='{model_name}'")
+                for v in versions:
+                    if v.current_stage == "Production" and v.version != version:
+                        self.client.transition_model_version_stage(
+                            name=model_name,
+                            version=v.version,
+                            stage="Archived"
+                        )
+                        logger.info(f"Archived version {v.version}")
+            except Exception as e:
+                logger.warning(f"Could not archive old versions: {e}")
+            
+            # Promote the requested version to Production
+            self.client.transition_model_version_stage(
+                name=model_name,
+                version=version,
+                stage="Production"
+            )
+            
+            logger.info(f"✅ Promoted {model_name} v{version} to Production")
+            
+            return {
+                "success": True,
+                "message": f"Promoted {model_name} version {version} to Production",
+                "model_name": model_name,
+                "version": version,
+                "stage": "Production"
+            }
+        
+        except Exception as e:
+            logger.error(f"Promote error: {e}")
+            return {"error": str(e)}

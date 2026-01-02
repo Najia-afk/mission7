@@ -484,6 +484,47 @@ def rollback_model():
     return jsonify(result)
 
 
+@api_bp.route('/api/models/promote', methods=['POST'])
+def promote_model():
+    """
+    Promote a model version to Production stage in MLflow
+    ---
+    tags:
+      - Models
+    consumes:
+      - application/json
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            model_name:
+              type: string
+              description: Model name in registry
+            version:
+              type: string
+              description: Version to promote
+    responses:
+      200:
+        description: Model promoted successfully
+      400:
+        description: Promotion failed
+        schema:
+          $ref: '#/definitions/Error'
+    """
+    data = request.get_json()
+    result = model_service.promote_version(
+        model_name=data.get('model_name'),
+        version=data.get('version')
+    )
+    
+    if result.get('error'):
+        return jsonify(result), 400
+    return jsonify(result)
+
+
 # =============================================================================
 # PREDICTION HISTORY
 # =============================================================================
