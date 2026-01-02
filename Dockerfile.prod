@@ -1,4 +1,4 @@
-# Dockerfile.prod
+﻿# Dockerfile.prod
 # Production Docker image for Mission7 Credit Scoring API
 # Uses the new modular app/ structure
 
@@ -36,6 +36,17 @@ COPY tests/ ./tests/
 # Entrypoint script
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
+
+# ============================================================================
+# VALIDATE PRODUCTION MODEL AT BUILD TIME
+# ============================================================================
+# Verifies prod_models/ contains valid model.pkl and threshold.json
+# Reuses the same verify_exported_model() function from the export pipeline
+# (called manually in notebook before pushing prod_models/ to git)
+RUN echo "" && \
+    echo " Validating production model package..." && \
+    python -c "import sys; sys.path.insert(0, '/app/src'); from scripts.export_model import verify_exported_model; verify_exported_model('/app/prod_models') or exit(1)" && \
+    echo " Production model validation passed!"
 
 # Set environment variables
 ENV PYTHONPATH=/app:/app/src

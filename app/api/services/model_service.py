@@ -2,16 +2,20 @@
 """
 Model management service for credit scoring.
 Handles model loading, deployment, and versioning.
+Supports both local pickle files and MLflow Serving with SHAP.
 """
 import os
 import json
 import pickle
+import requests
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any, Tuple
 
 import mlflow.sklearn
 from mlflow.tracking import MlflowClient
+import pandas as pd
+import numpy as np
 
 from app.config.settings import get_config
 from app.utils.logging_config import setup_logging
@@ -22,29 +26,141 @@ logger = setup_logging('model')
 class ModelService:
     """Service for managing ML models (loading, deployment, rollback)."""
     
+    # Class-level cache for singleton-like behavior
+    _model_cache = None
+    _threshold_cache = None
+    _model_source = None
+    
     def __init__(self):
         self.config = get_config()
         mlflow.set_tracking_uri(self.config.MLFLOW_TRACKING_URI)
         self.client = MlflowClient()
-        self._model_cache = None
-        self._threshold_cache = None
+    
+    def is_mlflow_serving_enabled(self) -> bool:
+        """Check if MLflow Serving mode is enabled."""
+        return self.config.USE_MLFLOW_SERVING
+    
+    def predict_with_mlflow_serving(self, X: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Make prediction via MLflow Serving endpoint with SHAP explanations.
+        
+        Args:
+            X: DataFrame with features for prediction
+            
+        Returns:
+            Dict with probability, decision, threshold, and SHAP explanation
+        """
+        if not self.is_mlflow_serving_enabled():
+            raise ValueError("MLflow Serving is not enabled. Set USE_MLFLOW_SERVING=true")
+        
+        try:
+            # Prepare request for MLflow Serving
+            # MLflow expects 'dataframe_split' format
+            payload = {
+                "dataframe_split": {
+                    "columns": X.columns.tolist(),
+                    "data": X.values.tolist()
+                }
+            }
+            
+            # Call MLflow Serving endpoint
+            url = f"{self.config.MLFLOW_SERVING_URI}/invocations"
+            response = requests.post(
+                url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"MLflow Serving error: {response.status_code} - {response.text}")
+                return {"error": f"MLflow Serving returned {response.status_code}"}
+            
+            result = response.json()
+            
+            # Parse response from custom PyFunc model
+            # Expected format: {"predictions": [{"probability": 0.25, "decision": "ACCEPTED", ...}]}
+            if "predictions" in result:
+                pred = result["predictions"][0] if isinstance(result["predictions"], list) else result["predictions"]
+                return {
+                    "probability": pred.get("probability"),
+                    "decision": pred.get("decision"),
+                    "threshold": pred.get("threshold"),
+                    "shap_explanation": json.loads(pred.get("shap_explanation", "{}"))
+                }
+            else:
+                # Handle raw probability array (fallback for non-custom models)
+                proba = result[0] if isinstance(result, list) else result
+                threshold = self._get_threshold()
+                return {
+                    "probability": float(proba),
+                    "decision": "REJECTED" if proba >= threshold else "ACCEPTED",
+                    "threshold": threshold,
+                    "shap_explanation": None
+                }
+                
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Cannot connect to MLflow Serving at {self.config.MLFLOW_SERVING_URI}")
+            return {"error": "MLflow Serving is not available"}
+        except Exception as e:
+            logger.error(f"MLflow Serving prediction error: {e}")
+            return {"error": str(e)}
+    
+    def _get_threshold(self) -> float:
+        """Get threshold from cache or file."""
+        if ModelService._threshold_cache is not None:
+            return ModelService._threshold_cache
+        
+        if os.path.exists(self.config.PROD_THRESHOLD_PATH):
+            with open(self.config.PROD_THRESHOLD_PATH, 'r') as f:
+                threshold_data = json.load(f)
+                return float(threshold_data.get("optimal_threshold", self.config.DEFAULT_THRESHOLD))
+        
+        return self.config.DEFAULT_THRESHOLD
     
     def get_production_model(self) -> Tuple[Any, float]:
         """
-        Get the production model with fallback strategy:
-        1. First try /prod_models/model.pkl (git-committed, preferred)
-        2. Then try MLflow registry with 'Production' stage
+        Get the production model with caching and fallback strategy:
+        1. Return cached model if available
+        2. Try /prod_models/model.pkl (git-committed, preferred)
+        3. Try MLflow registry with 'Production' stage
         
         Returns:
             Tuple of (model, threshold)
         """
+        # Return cached model if available
+        if ModelService._model_cache is not None:
+            logger.debug(f"Using cached model (source: {ModelService._model_source})")
+            return ModelService._model_cache, ModelService._threshold_cache
+        
         # Try file-based model first
         model, threshold = self._load_from_file()
         if model is not None:
+            ModelService._model_cache = model
+            ModelService._threshold_cache = threshold
+            ModelService._model_source = 'file'
             return model, threshold
         
         # Fallback to MLflow registry
-        return self._load_from_mlflow()
+        model, threshold = self._load_from_mlflow()
+        if model is not None:
+            ModelService._model_cache = model
+            ModelService._threshold_cache = threshold
+            ModelService._model_source = 'mlflow'
+        return model, threshold
+    
+    @classmethod
+    def clear_cache(cls):
+        """Clear model cache (useful for testing or model reload)."""
+        cls._model_cache = None
+        cls._threshold_cache = None
+        cls._model_source = None
+        logger.info("Model cache cleared")
+    
+    @classmethod
+    def is_model_loaded(cls) -> bool:
+        """Check if model is cached."""
+        return cls._model_cache is not None
     
     def _load_from_file(self) -> Tuple[Any, float]:
         """Load model from prod_models/ directory."""

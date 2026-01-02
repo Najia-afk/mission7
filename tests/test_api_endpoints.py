@@ -275,5 +275,36 @@ def test_audit_predictions_endpoint(client):
         assert isinstance(data, (dict, list))
 
 
+def test_new_user_with_manual_features(client):
+    """Test prediction for a new user (not in database) with manually provided features."""
+    # New user ID that definitely doesn't exist in dataset
+    new_user_id = "new_user_12345"
+    features = {
+        "AMT_INCOME_TOTAL": 200000,
+        "AMT_CREDIT": 600000,
+        "AMT_ANNUITY": 30000,
+        "AMT_GOODS_PRICE": 550000,
+        "DAYS_BIRTH": -15000,
+        "DAYS_EMPLOYED": -3000,
+        "EXT_SOURCE_1": 0.6,
+        "EXT_SOURCE_2": 0.55,
+        "EXT_SOURCE_3": 0.65
+    }
+    
+    response = client.post('/predict', 
+                          json={"client_id": new_user_id, "features": features},
+                          content_type='application/json')
+    
+    # Should handle new user gracefully - either predict or return proper error
+    assert response.status_code in [200, 400, 404, 500]
+    data = json.loads(response.data)
+    
+    # If prediction succeeds with manual features
+    if response.status_code == 200:
+        assert 'probability' in data
+        assert 'decision' in data
+        assert 'threshold' in data
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

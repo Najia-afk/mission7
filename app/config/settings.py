@@ -33,6 +33,10 @@ class Config:
     MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow-dev:5005")
     MODEL_NAME: str = os.getenv("MODEL_NAME", "CreditScoring_BestModel")
     
+    # MLflow Serving (optional - for custom PyFunc with SHAP)
+    USE_MLFLOW_SERVING: bool = os.getenv("USE_MLFLOW_SERVING", "false").lower() == "true"
+    MLFLOW_SERVING_URI: str = os.getenv("MLFLOW_SERVING_URI", "http://mlflow-serve:5003")
+    
     # Production Model Paths
     PROD_MODEL_PATH: str = os.getenv("PROD_MODEL_PATH", "/app/prod_models/model.pkl")
     PROD_THRESHOLD_PATH: str = os.getenv("PROD_THRESHOLD_PATH", "/app/prod_models/threshold.json")

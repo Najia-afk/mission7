@@ -241,9 +241,9 @@
                         </div>
                     </div>
                     <div class="flex gap-sm mt-md">
-                        ${model.runId ? `
-                            <a href="/mlflow/#/experiments/0/runs/${model.runId}" target="_blank" 
-                               class="btn btn-secondary btn-sm flex-1">MLflow</a>
+                        ${model.name ? `
+                            <a href="/mlflow/#/models/${encodeURIComponent(model.name)}${model.version ? '/versions/' + model.version : ''}" target="_blank" 
+                               class="btn btn-secondary btn-sm flex-1">MLflow Registry</a>
                         ` : ''}
                         ${!model.isDeployed ? `
                             <button class="btn btn-primary btn-sm flex-1" 

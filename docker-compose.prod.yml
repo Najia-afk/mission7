@@ -4,15 +4,19 @@
 #
 # Architecture:
 #   Nginx (80) → API (8000) → PostgreSQL (5432)
-#                          → Model from prod_models/
+#                          → Model from prod_models/ OR MLflow Serving (5003)
 #                          → MLflow Registry (5002)
+#
+# MLflow Serving Mode (optional):
+#   Set USE_MLFLOW_SERVING=true to use MLflow Model Serving instead of pickle
+#   This enables the custom PyFunc model with SHAP explanations
 #
 # CI/CD Flow:
 #   1. Push to main → GitHub Actions triggers
 #   2. Tests run (pytest)
 #   3. Lightsail: git pull origin main
 #   4. docker compose -f docker-compose.prod.yml up -d --build
-#   5. API loads model from prod_models/
+#   5. API loads model from prod_models/ (or MLflow Serving if enabled)
 #
 # Usage:
 #   docker compose -f docker-compose.prod.yml up -d
@@ -88,6 +92,8 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow:5002
       - PROD_MODEL_PATH=/app/prod_models/model.pkl
       - USE_POSTGRES=true
+      - USE_MLFLOW_SERVING=${USE_MLFLOW_SERVING:-false}
+      - MLFLOW_SERVING_URI=http://mlflow-serve:5003
       - DB_URI=postgresql://${POSTGRES_USER:-mission7}:${POSTGRES_PASSWORD:-mission7pass}@postgres:5432/${POSTGRES_DB:-credit_scoring}
       - DB_PATH=/app/dataset/home_credit.db
       - FLASK_ENV=production
@@ -128,6 +134,44 @@ services:
       - ./prod_models:/app/prod_models:ro
     networks:
       - mission7_prod_net
+
+  # ==========================================================================
+  # MLFLOW SERVING - Model Inference with SHAP (Port 5003, internal)
+  # Serves the custom PyFunc model with built-in SHAP explanations
+  # Enable with USE_MLFLOW_SERVING=true
+  # ==========================================================================
+  mlflow-serve:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: mission7_mlflow_serve_prod
+    restart: unless-stopped
+    profiles:
+      - mlflow-serving  # Only starts with --profile mlflow-serving or USE_MLFLOW_SERVING
+    command: >
+      mlflow models serve
+      --model-uri /app/prod_models
+      --host 0.0.0.0
+      --port 5003
+      --no-conda
+    expose:
+      - "5003"
+    volumes:
+      - ./prod_models:/app/prod_models:ro
+      - ./app/config:/app/config:ro
+      - ./scripts:/app/scripts:ro
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5002
+      - PYTHONPATH=/app:/app/src
+    depends_on:
+      - mlflow
+    networks:
+      - mission7_prod_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 networks:
   mission7_prod_net:

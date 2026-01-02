@@ -6,12 +6,98 @@ from sklearn.model_selection import learning_curve
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import shap
 import warnings
+import json
+import os
 
 class ModelVisualizer:
     """
     Class for visualizing model performance, learning curves, and SHAP feature importance.
     Adapted from Mission 4 for classification tasks.
+    
+    Supports human-readable feature names via feature_mappings.json for better SHAP visualizations.
     """
+    
+    # Class-level cache for feature mappings
+    _feature_mappings = None
+    
+    @classmethod
+    def load_feature_mappings(cls):
+        """Load feature name mappings from config file."""
+        if cls._feature_mappings is not None:
+            return cls._feature_mappings
+        
+        # Try multiple paths for flexibility
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), '../../app/config/feature_mappings.json'),
+            '/app/config/feature_mappings.json',  # Docker container path
+            os.path.join(os.path.dirname(__file__), '../../../app/config/feature_mappings.json'),
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    cls._feature_mappings = json.load(f)
+                    return cls._feature_mappings
+        
+        # Return empty mappings if file not found
+        cls._feature_mappings = {"feature_names": {}, "days_to_years_columns": []}
+        return cls._feature_mappings
+    
+    @classmethod
+    def get_human_readable_name(cls, technical_name: str) -> str:
+        """Convert technical feature name to human-readable format."""
+        mappings = cls.load_feature_mappings()
+        
+        # Remove ColumnTransformer prefixes
+        clean_name = technical_name
+        for prefix in ['num__', 'cat__', 'ind__']:
+            if clean_name.startswith(prefix):
+                clean_name = clean_name[len(prefix):]
+                break
+        
+        # Remove _origin suffix from indicator columns
+        if clean_name.endswith('_origin'):
+            clean_name = clean_name[:-7]
+        
+        # Look up in mappings
+        feature_names = mappings.get('feature_names', {})
+        return feature_names.get(clean_name, clean_name)
+    
+    @classmethod
+    def transform_value_for_display(cls, feature_name: str, value: float) -> tuple:
+        """
+        Transform value for human-readable display (e.g., DAYS to Years).
+        
+        Returns:
+            Tuple of (display_value, unit_suffix)
+        """
+        mappings = cls.load_feature_mappings()
+        days_columns = mappings.get('days_to_years_columns', [])
+        
+        # Check if this is a DAYS column (negative days to positive years)
+        clean_name = feature_name
+        for prefix in ['num__', 'cat__', 'ind__']:
+            if clean_name.startswith(prefix):
+                clean_name = clean_name[len(prefix):]
+                break
+        
+        if clean_name in days_columns:
+            # DAYS_BIRTH = -15000 means ~41 years old
+            # Convert: abs(days) / 365.25
+            years = round(abs(value) / 365.25, 1)
+            return years, "yrs"
+        
+        # Check if currency column
+        currency_columns = mappings.get('currency_columns', [])
+        if clean_name in currency_columns:
+            return value, "$"
+        
+        # Check if percentage column
+        percentage_columns = mappings.get('percentage_columns', [])
+        if clean_name in percentage_columns:
+            return round(value * 100, 1) if abs(value) < 10 else round(value, 1), "%"
+        
+        return value, ""
     
     @staticmethod
     def plot_learning_curves(models_dict, X, y, scorer=None, scoring_name='Score', cv=5, n_jobs=-1, train_sizes=np.linspace(0.1, 1.0, 5)):
@@ -403,11 +489,17 @@ class ModelVisualizer:
         
         final_value = base_value + np.sum(shap_values)
         
-        # Create labels that are more readable
+        # Create labels with human-readable names
         y_labels = []
         for val, feat in zip(sorted_values, sorted_features):
+            # Get human-readable name
+            human_name = ModelVisualizer.get_human_readable_name(feat)
+            
+            # Transform value for display (e.g., DAYS to Years)
+            display_val, unit = ModelVisualizer.transform_value_for_display(feat, val)
+            
+            # Clean feature name and format label
             clean_feat = feat
-            # Remove prefixes from ColumnTransformer
             if clean_feat.startswith('cat__'):
                 clean_feat = clean_feat.replace('cat__', '')
                 # If it's a categorical flag (value 1), make it explicit
@@ -415,24 +507,29 @@ class ModelVisualizer:
                     # Try to find the last underscore which usually separates feature name from category
                     parts = clean_feat.rsplit('_', 1)
                     if len(parts) > 1:
-                        clean_feat = f"{parts[0]}: {parts[1]}"
-                    y_labels.append(f"<b>YES</b> | {clean_feat}")
+                        human_name = f"{ModelVisualizer.get_human_readable_name(parts[0])}: {parts[1]}"
+                    y_labels.append(f"<b>YES</b> | {human_name}")
                 else:
-                    y_labels.append(f"<b>NO</b> | {clean_feat}")
+                    y_labels.append(f"<b>NO</b> | {human_name}")
             elif clean_feat.startswith('num__'):
-                clean_feat = clean_feat.replace('num__', '')
-                y_labels.append(f"<b>{val:.2f}</b> | {clean_feat}")
+                if unit:
+                    y_labels.append(f"<b>{display_val:.1f}{unit}</b> | {human_name}")
+                else:
+                    y_labels.append(f"<b>{display_val:.2f}</b> | {human_name}")
             elif clean_feat.startswith('ind__'):
                 clean_feat = clean_feat.replace('ind__', '').replace('_origin', '')
                 status = "PRESENT" if abs(val - 1.0) < 1e-3 else "MISSING"
-                y_labels.append(f"<b>{status}</b> | {clean_feat}")
+                y_labels.append(f"<b>{status}</b> | {human_name}")
             else:
-                y_labels.append(f"<b>{val:.2f}</b> | {clean_feat}")
+                if unit:
+                    y_labels.append(f"<b>{display_val:.1f}{unit}</b> | {human_name}")
+                else:
+                    y_labels.append(f"<b>{display_val:.2f}</b> | {human_name}")
         
         fig = go.Figure()
         
-        # Ensure scalar comparisons
-        colors = ['red' if float(v) > 0 else 'blue' for v in sorted_shap]
+        # Ensure scalar comparisons - red increases risk (default), blue decreases risk
+        colors = ['#d62728' if float(v) > 0 else '#1f77b4' for v in sorted_shap]
         
         fig.add_trace(go.Bar(
             x=sorted_shap.tolist(),
@@ -441,15 +538,16 @@ class ModelVisualizer:
             marker_color=colors,
             text=[f"{float(val):.2f}" for val in sorted_values],
             textposition='auto',
-            hovertemplate="Feature: %{y}<br>Value: %{text}<br>SHAP: %{x:.4f}<extra></extra>"
+            hovertemplate="Feature: %{y}<br>Raw Value: %{text}<br>SHAP: %{x:.4f}<extra></extra>"
         ))
         
         fig.update_layout(
-            title=f"Local Explanation for Sample {sample_idx}<br>Base: {base_value:.2f} → Final: {final_value:.2f}",
-            xaxis_title="SHAP Value (Impact on Output)",
-            yaxis_title="Feature",
+            title=f"Feature Impact on Risk Score<br><span style='font-size:12px'>Base: {base_value:.2f} → Final: {final_value:.2f} | <span style='color:#d62728'>Red = Increases Risk</span> | <span style='color:#1f77b4'>Blue = Decreases Risk</span></span>",
+            xaxis_title="SHAP Value (Impact on Default Probability)",
+            yaxis_title="",
             height=600,
-            template='plotly_white'
+            template='plotly_white',
+            margin=dict(l=250)  # More space for readable labels
         )
         
         return fig
