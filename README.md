@@ -78,15 +78,17 @@ docker compose up -d
 
 ### Production Mode (API + PostgreSQL)
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-On first startup with a fresh Postgres volume, the API container automatically seeds
-`application_train` and `application_test` in PostgreSQL **only if** `dataset/home_credit.db` is present.
+On first startup, the API container automatically seeds PostgreSQL from compressed CSV samples included in the repo:
+- `dataset/application_train_sample.csv.gz` (100k rows, stratified sample)
+- `dataset/application_test.csv.gz` (48k rows, full test set)
 
 Notes:
-- `dataset/` is ignored by git to avoid committing large data files.
-- Seeding is idempotent: if tables already have rows, it skips.
+- Seeding takes ~7 minutes for 148k total rows
+- Seeding is idempotent: if tables already have rows, it skips
+- All features work with the sampled data (predictions, SHAP, similar clients, bivariate plots)
 
 | Service | URL |
 |---------|-----|
