@@ -99,6 +99,11 @@ Notes:
 | Service | URL |
 |---------|-----|
 | Dashboard | http://localhost |
+| Predict (Client) | http://localhost/predict |
+| Predict (Test) | http://localhost/predict-test |
+| Simulator | http://localhost/simulator |
+| History | http://localhost/history |
+| Audit | http://localhost/audit |
 | API Docs (Swagger) | http://localhost/api/docs |
 | API Health | http://localhost/api/health |
 | MLflow Registry | http://localhost:5002 |
@@ -171,6 +176,16 @@ curl http://localhost/api/models/list
 
 # Current model details
 curl http://localhost/api/models/current
+```
+
+### Prediction History & Analytics
+```bash
+# Search predictions with filters
+curl "http://localhost/api/predictions/search?limit=50&decision=ACCEPTED"
+curl "http://localhost/api/predictions/search?client_id=100002&min_score=0.3"
+
+# Get prediction statistics
+curl http://localhost/api/predictions/stats
 ```
 
 ---
