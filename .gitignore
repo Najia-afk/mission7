@@ -131,6 +131,12 @@ cache/
 *.model
 *.joblib
 
+# Allow production model artifacts
+!prod_models/*.pkl
+!prod_models/*.json
+!prod_models/*.txt
+!prod_models/*.html
+
 # Secrets
 *.pem
 *.key

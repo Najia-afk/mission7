@@ -49,6 +49,17 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
       
+      - name: Verify Production Model Artifacts
+        run: |
+          echo "Checking for production model artifacts..."
+          if [ ! -f "prod_models/model.pkl" ]; then
+            echo "❌ Error: prod_models/model.pkl not found!"
+            echo "Ensure the model is committed to the repository."
+            exit 1
+          fi
+          echo "✅ prod_models/model.pkl found."
+          ls -la prod_models/
+
       - name: Run tests with pytest
         run: |
           pytest tests/ -v --tb=short --cov=src --cov-report=xml
@@ -56,6 +67,7 @@ jobs:
           MLFLOW_TRACKING_URI: "sqlite:///mlruns.db"
           DB_PATH: "./dataset/home_credit.db"
           USE_POSTGRES: "false"
+          PYTHONPATH: "${{ github.workspace }}"
       
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
