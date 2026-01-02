@@ -185,8 +185,10 @@
                         const meta = model.metadata || {};
                         const card = createModelCard({
                             name: meta.model_name || model.name || 'Model',
+                            registryName: model.source === 'mlflow' ? model.name : null,
                             source: model.source || 'file',
                             version: meta.model_version || model.version || '-',
+                            registryVersion: model.source === 'mlflow' ? model.version : null,
                             runId: model.run_id || meta.run_id,
                             metrics: meta.metrics || {},
                             stage: model.stage,
@@ -242,9 +244,12 @@
                         </div>
                     </div>
                     <div class="flex gap-sm mt-md">
-                        ${model.name ? `
-                            <a href="/mlflow/#/models/${encodeURIComponent(model.name)}${model.version ? '/versions/' + model.version : ''}" target="_blank" 
+                        ${model.registryName ? `
+                            <a href="/mlflow/#/models/${encodeURIComponent(model.registryName)}${model.registryVersion ? '/versions/' + model.registryVersion : ''}" target="_blank" 
                                class="btn btn-secondary btn-sm flex-1">MLflow Registry</a>
+                        ` : model.runId ? `
+                            <a href="/mlflow/#/experiments/0/runs/${model.runId}" target="_blank" 
+                               class="btn btn-secondary btn-sm flex-1">View Run</a>
                         ` : ''}
                         ${!model.isDeployed ? `
                             <button class="btn btn-primary btn-sm flex-1" 
