@@ -327,6 +327,7 @@
                                         <th>Decision</th>
                                         <th>Risk Score</th>
                                         <th>Threshold</th>
+                                        <th>Model</th>
                                         <th>Source</th>
                                         <th>Date</th>
                                         <th>Actions</th>
@@ -500,6 +501,8 @@
                 const score = p.probability || 0;
                 const scoreClass = score < 0.3 ? 'low' : score < 0.6 ? 'medium' : 'high';
                 const date = p.created_at ? new Date(p.created_at).toLocaleString() : '-';
+                const modelId = p.model_id ? p.model_id.substring(0, 8) + '...' : '-';
+                const modelVersion = p.model_version || '';
                 
                 return `
                     <tr>
@@ -518,6 +521,11 @@
                             </div>
                         </td>
                         <td>${(p.threshold * 100).toFixed(0)}%</td>
+                        <td>
+                            ${p.model_id ? `<a href="/api/audit/model/${p.model_id}" target="_blank" class="model-link" title="v${modelVersion}">
+                                <code>${modelId}</code>
+                            </a>` : '<span class="text-muted">-</span>'}
+                        </td>
                         <td>${p.request_source || 'api'}</td>
                         <td>${date}</td>
                         <td>

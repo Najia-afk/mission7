@@ -122,12 +122,18 @@ class PredictionService:
                 for feat in shap_explanation["top_features"]
             }
         
+        # Get model info for audit trail
+        model_id = self.model_service.get_current_model_id()
+        model_version = self.model_service.get_current_model_version()
+        
         # Log prediction
         log_prediction_to_postgres(
             client_id=client_id if client_id else 0,
             probability=float(y_proba),
             threshold=threshold,
             decision=decision,
+            model_id=model_id,
+            model_version=model_version,
             shap_values=shap_dict
         )
         
@@ -164,12 +170,18 @@ class PredictionService:
         # SHAP Explanation (get both HTML and values for logging)
         shap_html, shap_dict = self._compute_shap_with_values(model, X_features)
         
+        # Get model info for audit trail
+        model_id = self.model_service.get_current_model_id()
+        model_version = self.model_service.get_current_model_version()
+        
         # Log prediction with SHAP values for drift monitoring
         log_prediction_to_postgres(
             client_id=client_id if client_id else 0,
             probability=float(y_proba),
             threshold=threshold,
             decision=decision,
+            model_id=model_id,
+            model_version=model_version,
             shap_values=shap_dict
         )
         

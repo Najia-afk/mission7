@@ -66,6 +66,7 @@ def ensure_predictions_table(engine):
         probability FLOAT NOT NULL,
         threshold FLOAT NOT NULL,
         decision VARCHAR(20) NOT NULL,
+        model_id VARCHAR(64),
         model_version VARCHAR(64),
         request_source VARCHAR(20) DEFAULT 'api',
         shap_values JSONB,
@@ -74,6 +75,7 @@ def ensure_predictions_table(engine):
     CREATE INDEX IF NOT EXISTS idx_predictions_client_id ON predictions(client_id);
     CREATE INDEX IF NOT EXISTS idx_predictions_created_at ON predictions(created_at);
     CREATE INDEX IF NOT EXISTS idx_predictions_decision ON predictions(decision);
+    CREATE INDEX IF NOT EXISTS idx_predictions_model_id ON predictions(model_id);
     """
     with engine.connect() as conn:
         conn.execute(text(create_table_sql))

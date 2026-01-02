@@ -385,3 +385,70 @@ def download_artifact(artifact_type, model_id='latest'):
             'X-Source': 'database'
         }
     )
+
+
+@audit_bp.route('/model/<model_id>')
+def get_model_info(model_id):
+    """
+    Get full model information by model_id
+    ---
+    tags:
+      - Audit
+    description: Retrieve all artifacts and metadata for a specific model version.
+                 Use this to audit historical predictions.
+    parameters:
+      - name: model_id
+        in: path
+        type: string
+        required: true
+        description: Model run_id (from predictions table)
+    responses:
+      200:
+        description: Complete model information
+        schema:
+          type: object
+          properties:
+            model_id:
+              type: string
+            metadata:
+              type: object
+            threshold:
+              type: object
+            has_drift_report:
+              type: boolean
+            has_feature_names:
+              type: boolean
+      404:
+        description: Model not found
+    """
+    config = get_config()
+    
+    if not config.USE_POSTGRES:
+        return jsonify({"error": "PostgreSQL mode required"}), 400
+    
+    # Get all artifacts for this model
+    artifacts = {}
+    artifact_types = ['metadata', 'threshold', 'drift_report_json', 'feature_names']
+    
+    for artifact_type in artifact_types:
+        artifact = get_artifact_from_db(model_id, artifact_type)
+        if artifact and artifact.get('artifact_json'):
+            artifacts[artifact_type] = artifact['artifact_json']
+        elif artifact and artifact.get('artifact_data'):
+            try:
+                artifacts[artifact_type] = json.loads(artifact['artifact_data'])
+            except:
+                artifacts[artifact_type] = artifact['artifact_data']
+    
+    if not artifacts:
+        abort(404, description=f"No artifacts found for model_id: {model_id}")
+    
+    return jsonify({
+        "model_id": model_id,
+        "metadata": artifacts.get('metadata', {}),
+        "threshold": artifacts.get('threshold', {}),
+        "has_drift_report": 'drift_report_json' in artifacts,
+        "has_feature_names": 'feature_names' in artifacts,
+        "drift_report_url": f"/api/audit/download/drift_report_html?model_id={model_id}",
+        "download_metadata_url": f"/api/audit/download/metadata?model_id={model_id}"
+    })

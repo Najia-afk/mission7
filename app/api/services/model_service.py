@@ -117,6 +117,27 @@ class ModelService:
                 return float(threshold_data.get("optimal_threshold", self.config.DEFAULT_THRESHOLD))
         
         return self.config.DEFAULT_THRESHOLD
+
+    def get_current_model_id(self) -> Optional[str]:
+        """
+        Get the current model ID (run_id) for the active production model.
+        This is used to link predictions to the model that made them.
+        
+        Returns:
+            Model ID string or None if not available
+        """
+        metadata = self._load_metadata()
+        return metadata.get("run_id")
+
+    def get_current_model_version(self) -> Optional[str]:
+        """
+        Get the current model version string.
+        
+        Returns:
+            Model version string or None if not available
+        """
+        metadata = self._load_metadata()
+        return metadata.get("model_version")
     
     def get_production_model(self) -> Tuple[Any, float]:
         """

@@ -99,6 +99,7 @@ def log_prediction_to_postgres(
     probability: float,
     threshold: float,
     decision: str,
+    model_id: Optional[str] = None,
     model_version: Optional[str] = None,
     shap_values: Optional[dict] = None
 ) -> bool:
@@ -110,7 +111,8 @@ def log_prediction_to_postgres(
         probability: Model probability output
         threshold: Business threshold used
         decision: ACCEPTED or REJECTED
-        model_version: Optional MLflow run_id
+        model_id: Model ID (run_id from prod_models/metadata.json)
+        model_version: Optional model version string
         shap_values: Optional dict of top SHAP values for debugging
         
     Returns:
@@ -126,31 +128,33 @@ def log_prediction_to_postgres(
         if shap_values:
             import json
             query = text("""
-                INSERT INTO predictions (client_id, probability, threshold, decision, model_version, request_source, shap_values, created_at)
-                VALUES (:client_id, :probability, :threshold, :decision, :model_version, 'api', CAST(:shap_values AS JSONB), NOW())
+                INSERT INTO predictions (client_id, probability, threshold, decision, model_id, model_version, request_source, shap_values, created_at)
+                VALUES (:client_id, :probability, :threshold, :decision, :model_id, :model_version, 'api', CAST(:shap_values AS JSONB), NOW())
             """)
             session.execute(query, {
                 "client_id": client_id,
                 "probability": probability,
                 "threshold": threshold,
                 "decision": decision,
+                "model_id": model_id,
                 "model_version": model_version,
                 "shap_values": json.dumps(shap_values)
             })
         else:
             query = text("""
-                INSERT INTO predictions (client_id, probability, threshold, decision, model_version, request_source, created_at)
-                VALUES (:client_id, :probability, :threshold, :decision, :model_version, 'api', NOW())
+                INSERT INTO predictions (client_id, probability, threshold, decision, model_id, model_version, request_source, created_at)
+                VALUES (:client_id, :probability, :threshold, :decision, :model_id, :model_version, 'api', NOW())
             """)
             session.execute(query, {
                 "client_id": client_id,
                 "probability": probability,
                 "threshold": threshold,
                 "decision": decision,
+                "model_id": model_id,
                 "model_version": model_version
             })
         session.commit()
-        logger.debug(f"Prediction logged for client {client_id}: {decision}")
+        logger.debug(f"Prediction logged for client {client_id}: {decision} (model: {model_id})")
         return True
     except Exception as e:
         logger.warning(f"Failed to log prediction: {e}")
@@ -265,10 +269,10 @@ def search_predictions(
         count_query = text(f"SELECT COUNT(*) FROM predictions WHERE {where_clause}")
         total = session.execute(count_query, params).scalar()
         
-        # Get data
+        # Get data with model_id
         data_query = text(f"""
             SELECT client_id, probability, threshold, decision, 
-                   model_version, request_source, created_at
+                   model_id, model_version, request_source, created_at
             FROM predictions 
             WHERE {where_clause}
             ORDER BY created_at DESC 
