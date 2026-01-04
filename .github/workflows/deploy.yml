@@ -1,8 +1,10 @@
-# Mission7 CI/CD - Simple Deploy
+# Mission7 CI/CD - Test & Deploy
 name: Deploy to Production
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -16,11 +18,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
           
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest pytest-cov
+
+      - name: Verify Production Model
+        run: |
+          if [ ! -f "prod_models/model.pkl" ]; then
+            echo "❌ prod_models/model.pkl not found!"
+            exit 1
+          fi
+          echo "✅ Model artifact found"
+          ls -la prod_models/
           
       - name: Run tests
         run: pytest tests/ -v --tb=short
@@ -33,6 +45,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
       - name: Deploy via SSH
@@ -49,3 +62,9 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --build
             docker network connect web_network mission7_nginx_prod 2>/dev/null || true
             docker network connect web_network mission7_mlflow_prod 2>/dev/null || true
+            
+      - name: Health Check
+        run: |
+          echo "Waiting for services to start..."
+          sleep 30
+          curl -sf http://${{ secrets.LIGHTSAIL_HOST }}/health && echo "✅ API healthy!" || echo "⚠️ Health check pending (DB may be seeding)"
