@@ -24,6 +24,11 @@ jobs:
           
       - name: Run tests
         run: pytest tests/ -v --tb=short
+        env:
+          MLFLOW_TRACKING_URI: "sqlite:///mlruns.db"
+          DB_PATH: "./dataset/home_credit.db"
+          USE_POSTGRES: "false"
+          PYTHONPATH: ${{ github.workspace }}
 
   deploy:
     needs: test
