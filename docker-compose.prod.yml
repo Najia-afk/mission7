@@ -51,13 +51,15 @@ services:
   # ==========================================================================
   # NGINX - Reverse Proxy & Dashboard (Port 80)
   # Serves the dashboard HTML and proxies API/MLflow requests
+  # NOT exposed externally - only accessible via datascience_adventure proxy
   # ==========================================================================
   nginx:
     image: nginx:alpine
     container_name: mission7_nginx_prod
     restart: unless-stopped
-    ports:
-      - "80:80"
+    # No external port - only accessible via web_network from datascience_adventure
+    expose:
+      - "80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./app/templates:/usr/share/nginx/html:ro
@@ -67,6 +69,7 @@ services:
     networks:
       - frontend
       - backend
+      - web_network  # Connect to datascience_adventure
     healthcheck:
       test: [ "CMD", "curl", "-sf", "http://127.0.0.1/" ]
       interval: 30s
@@ -133,6 +136,7 @@ services:
     networks:
       - backend
       - middleware
+      - web_network  # Connect to datascience_adventure
 
   # ==========================================================================
   # MLFLOW SERVING - Model Inference with SHAP (Port 5003, internal)
@@ -177,6 +181,9 @@ networks:
     driver: bridge
   database:
     driver: bridge
+  # External network to connect with datascience_adventure
+  web_network:
+    external: true
 
 volumes:
   postgres_data:
