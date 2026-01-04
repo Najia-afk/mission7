@@ -75,6 +75,7 @@ def _table_row_count(pg_engine, table_name: str) -> Optional[int]:
 
 
 def _ensure_indexes(pg_engine) -> None:
+    """Create indexes and update query planner statistics."""
     statements = [
         'CREATE INDEX IF NOT EXISTS idx_application_train_sk_id_curr ON application_train ("SK_ID_CURR")',
         'CREATE INDEX IF NOT EXISTS idx_application_test_sk_id_curr ON application_test ("SK_ID_CURR")',
@@ -82,6 +83,13 @@ def _ensure_indexes(pg_engine) -> None:
     with pg_engine.connect() as conn:
         for stmt in statements:
             conn.execute(text(stmt))
+        conn.commit()
+    
+    # Run ANALYZE to update query planner statistics (critical for performance)
+    print("   Running ANALYZE for query optimization...")
+    with pg_engine.connect() as conn:
+        conn.execute(text("ANALYZE application_train"))
+        conn.execute(text("ANALYZE application_test"))
         conn.commit()
 
 

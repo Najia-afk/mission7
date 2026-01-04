@@ -130,6 +130,23 @@ def log_prediction_to_postgres(
     session = get_postgres_session()
     try:
         import json
+        import math
+        
+        def clean_for_json(obj):
+            """Replace NaN/Inf with None for JSON compatibility."""
+            if isinstance(obj, dict):
+                return {k: clean_for_json(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [clean_for_json(item) for item in obj]
+            elif isinstance(obj, float):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+                return obj
+            return obj
+        
+        # Clean data for JSON serialization (NaN → null)
+        clean_shap = clean_for_json(shap_values) if shap_values else None
+        clean_features = clean_for_json(input_features) if input_features else None
         
         # Prepare values
         values = {
@@ -139,8 +156,8 @@ def log_prediction_to_postgres(
             "decision": decision,
             "model_id": model_id,
             "model_version": model_version,
-            "shap_values": json.dumps(shap_values) if shap_values else None,
-            "input_features": json.dumps(input_features) if input_features else None
+            "shap_values": json.dumps(clean_shap) if clean_shap else None,
+            "input_features": json.dumps(clean_features) if clean_features else None
         }
         
         query = text("""

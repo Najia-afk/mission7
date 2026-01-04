@@ -82,7 +82,7 @@ docker compose up -d
 | Jupyter Lab | http://localhost:8888 |
 | MLflow UI | http://localhost:5005 |
 
-### Production Mode (API + PostgreSQL)
+### Production Mode (API + MLflow + PostgreSQL)
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
@@ -251,29 +251,97 @@ docker exec mission7_api_prod pytest tests/ --cov=app
 
 ## 🏗️ Architecture
 
+### Production Stack (docker-compose.prod.yml)
+
 ```
-                    ┌─────────────┐
-                    │   NGINX     │ :80
-                    │  (Reverse   │
-                    │   Proxy)    │
-                    └──────┬──────┘
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-              ▼                         ▼
-       ┌─────────────┐          ┌─────────────┐
-       │  Flask API  │          │   MLflow    │ :5002
-       │   Gunicorn  │ :8000    │  Registry   │
-       └──────┬──────┘          └─────────────┘
-              │
-    ┌─────────┴─────────┐
-    │                   │
-    ▼                   ▼
-┌─────────┐      ┌─────────────┐
-│ Model   │      │ PostgreSQL  │ :5432
-│ (pkl)   │      │ (Audit Log) │
-└─────────┘      └─────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           PRODUCTION ARCHITECTURE                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│    ┌─────────────────────────────────────────────────────────────────┐  │
+│    │                        FRONTEND NETWORK                          │  │
+│    │                                                                  │  │
+│    │                      ┌──────────────┐                           │  │
+│    │       :80 ──────────▶│    NGINX     │                           │  │
+│    │      (public)        │   (alpine)   │                           │  │
+│    │                      │              │                           │  │
+│    │                      │ • Static CSS │                           │  │
+│    │                      │ • Templates  │                           │  │
+│    │                      └──────┬───────┘                           │  │
+│    └─────────────────────────────│───────────────────────────────────┘  │
+│                                  │                                       │
+│    ┌─────────────────────────────│───────────────────────────────────┐  │
+│    │                        BACKEND NETWORK                           │  │
+│    │                                  │                               │  │
+│    │                      ┌──────────▼───────────┐                   │  │
+│    │                      │     Flask API        │                   │  │
+│    │        :8000 ◀───────│     (Gunicorn)       │                   │  │
+│    │       (internal)     │                      │                   │  │
+│    │                      │ • Predictions        │                   │  │
+│    │                      │ • SHAP values        │                   │  │
+│    │                      │ • Audit endpoints    │                   │  │
+│    │                      └──────────┬───────────┘                   │  │
+│    └─────────────────────────────────│───────────────────────────────┘  │
+│                                      │                                   │
+│    ┌─────────────────────────────────│───────────────────────────────┐  │
+│    │                      MIDDLEWARE NETWORK                          │  │
+│    │                                 │                                │  │
+│    │              ┌──────────────────┴──────────────────┐            │  │
+│    │              │                                     │            │  │
+│    │              ▼                                     ▼            │  │
+│    │   ┌──────────────────┐              ┌──────────────────────┐   │  │
+│    │   │     MLflow       │              │  MLflow Serving      │   │  │
+│    │   │    Registry      │ :5002        │    (optional)        │   │  │
+│    │   │                  │ (internal)   │                      │   │  │
+│    │   │ • Experiments    │              │ :5003 (internal)     │   │  │
+│    │   │ • Model versions │              │ • PyFunc model       │   │  │
+│    │   └──────────────────┘              │ • SHAP inference     │   │  │
+│    │                                     └──────────────────────┘   │  │
+│    └────────────────────────────────────────────────────────────────┘  │
+│                                      │                                   │
+│    ┌─────────────────────────────────│───────────────────────────────┐  │
+│    │                       DATABASE NETWORK                           │  │
+│    │                                 │                                │  │
+│    │                      ┌──────────▼───────────┐                   │  │
+│    │                      │     PostgreSQL       │                   │  │
+│    │        :5432 ◀───────│    (15-alpine)       │                   │  │
+│    │       (internal)     │                      │                   │  │
+│    │                      │ • Client data        │                   │  │
+│    │                      │ • Prediction logs    │                   │  │
+│    │                      │ • Audit trail        │                   │  │
+│    │                      └──────────────────────┘                   │  │
+│    └────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Model Loading: prod_models/model.pkl (or MLflow Serving with --profile mlflow-serving)
 ```
+
+### Development Stack (docker-compose.yml)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DEVELOPMENT ARCHITECTURE                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│         ┌────────────────────┐         ┌────────────────────┐           │
+│         │      Jupyter       │         │       MLflow       │           │
+│   :8870 │      Notebook      │   :5075 │        Dev         │           │
+│         │                    │         │                    │           │
+│         │ • Training         │ ◀──────▶│ • Experiments      │           │
+│         │ • Exploration      │         │ • Model tracking   │           │
+│         └────────────────────┘         └────────────────────┘           │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Reference
+
+| Environment | Command | Services |
+|-------------|---------|----------|
+| **Dev** | `docker compose up -d` | Jupyter (:8870), MLflow (:5075) |
+| **Prod** | `docker compose -f docker-compose.prod.yml up -d` | Nginx (:80), API, MLflow, PostgreSQL |
+| **Prod + MLflow Serving** | `docker compose -f docker-compose.prod.yml --profile mlflow-serving up -d` | + MLflow Serving (:5003) |
 
 ---
 

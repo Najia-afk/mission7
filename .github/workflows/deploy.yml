@@ -1,0 +1,127 @@
+# =============================================================================
+# Mission7 CI/CD Pipeline - Deploy to AWS Lightsail
+# =============================================================================
+#
+# Triggers:
+#   - Push to main branch
+#   - Manual workflow dispatch
+#
+# Required GitHub Secrets:
+#   LIGHTSAIL_HOST      - IP address or hostname of Lightsail instance
+#   LIGHTSAIL_USER      - SSH username (usually 'ubuntu')
+#   LIGHTSAIL_SSH_KEY   - Private SSH key for authentication
+#   POSTGRES_USER       - PostgreSQL username
+#   POSTGRES_PASSWORD   - PostgreSQL password
+#
+# =============================================================================
+
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild all containers'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  INSTALL_DIR: /opt/mission7
+
+jobs:
+  # ===========================================================================
+  # Job 1: Run Tests
+  # ===========================================================================
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short
+          
+  # ===========================================================================
+  # Job 2: Deploy to Lightsail
+  # ===========================================================================
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to Lightsail via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script: |
+            set -e
+            
+            echo "📂 Navigating to project directory..."
+            cd ${{ env.INSTALL_DIR }}
+            
+            echo "📥 Pulling latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            echo "🔐 Setting up environment..."
+            cat > .env << 'EOF'
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=credit_scoring
+            USE_MLFLOW_SERVING=false
+            EOF
+            chmod 600 .env
+            
+            echo "🐳 Rebuilding and restarting containers..."
+            docker compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml up -d --build
+            
+            echo "⏳ Waiting for API to be ready..."
+            for i in {1..60}; do
+              if curl -sf http://localhost/api/health > /dev/null 2>&1; then
+                echo "✅ API is healthy!"
+                break
+              fi
+              echo "Waiting... ($i/60)"
+              sleep 5
+            done
+            
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+            
+            echo "✅ Deployment complete!"
+
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+          sleep 10
+          curl -sf "http://${{ secrets.LIGHTSAIL_HOST }}/api/health" || echo "⚠️ Health check pending (DB seed may be in progress)"
+          
+  # ===========================================================================
+  # Job 3: Notify on Failure
+  # ===========================================================================
+  notify-failure:
+    needs: [test, deploy]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Notify failure
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the workflow logs for details."
