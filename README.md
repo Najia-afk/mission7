@@ -96,17 +96,28 @@ Notes:
 - Seeding is idempotent: if tables already have rows, it skips
 - All features work with the sampled data (predictions, SHAP, similar clients, bivariate plots)
 
+#### Standalone Mode (Direct Access)
+If running mission7 independently (not behind datascience_adventure proxy):
+- Change `expose: "80"` to `ports: "8077:80"` in `docker-compose.prod.yml`
+
 | Service | URL |
 |---------|-----|
-| Dashboard | http://localhost |
-| Predict (Client) | http://localhost/predict |
-| Predict (Test) | http://localhost/predict-test |
-| Simulator | http://localhost/simulator |
-| History | http://localhost/history |
-| Audit | http://localhost/audit |
-| API Docs (Swagger) | http://localhost/api/docs |
-| API Health | http://localhost/api/health |
+| Dashboard | http://localhost:8077 |
+| Predict (Client) | http://localhost:8077/predict |
+| API Docs (Swagger) | http://localhost:8077/api/docs |
 | MLflow Registry | http://localhost:5002 |
+
+#### Integrated Mode (Behind datascience_adventure proxy - Recommended for Production)
+When deployed with datascience_adventure, mission7 is **not exposed externally**. All access goes through the authenticated proxy:
+
+| Service | URL |
+|---------|-----|
+| Dashboard | https://datascience-adventure.xyz/dashboard_mission7/ |
+| Predict | https://datascience-adventure.xyz/dashboard_mission7/predict |
+| API Docs | https://datascience-adventure.xyz/dashboard_mission7/api/docs |
+| MLflow | https://datascience-adventure.xyz/dashboard_mission7/mlflow/ |
+
+**Security**: All routes require Google OAuth authentication via the datascience_adventure proxy.
 
 ---
 
