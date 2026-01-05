@@ -47,6 +47,10 @@ pytest>=8.0.0
 pytest-cov>=4.0.0
 Faker>=22.0.0
 
+# Hyperparameter Optimization
+optuna>=3.5.0
+optuna-integration>=3.5.0
+
 # Utilities
 tqdm>=4.66.0
 kneed>=0.8.0

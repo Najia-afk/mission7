@@ -1,33 +1,33 @@
 {
-  "run_id": "9204c86aa94c436aa1bd3e1f5be63e7e",
+  "run_id": "e6af8127bb5446d0aea7cafa032e8a82",
   "model_name": "CreditScoring_BestModel",
-  "model_version": "7",
+  "model_version": "13",
   "algorithm": "LightGBM",
-  "optimal_threshold": 0.45,
-  "training_date": 1767264154840,
-  "export_date": "2026-01-01T11:06:26.094838",
+  "optimal_threshold": 0.51,
+  "training_date": 1767634338497,
+  "export_date": "2026-01-05T19:41:25.776774",
   "mlflow_model_uri": "models:/CreditScoring_BestModel/Production",
   "n_features": 125,
   "metrics": {
-    "auc_roc": 0.751438241053735,
-    "f1_score": 0.2751842751842752,
-    "precision": 0.17529610829103215,
-    "recall": 0.6397036122259957,
-    "accuracy": 0.727125,
-    "business_cost_avg": 0.53545,
-    "business_cost_total": 21418.0
+    "auc_roc": 0.7533520309917477,
+    "f1_score": 0.2741327790048071,
+    "precision": 0.17346267675106872,
+    "recall": 0.653250773993808,
+    "accuracy": 0.72065,
+    "business_cost_avg": 0.53135,
+    "business_cost_total": 10627.0
   },
   "confusion_matrix": {
-    "true_positives": 2072.0,
-    "true_negatives": 27013.0,
-    "false_positives": 9748.0,
-    "false_negatives": 1167.0
+    "true_positives": 1055.0,
+    "true_negatives": 13358.0,
+    "false_positives": 5027.0,
+    "false_negatives": 560.0
   },
-  "test_set_size": 40000.0,
-  "positive_rate": 0.080975,
+  "test_set_size": 20000.0,
+  "positive_rate": 0.08075,
   "evidently_report": {
     "html": "evidently_data_drift_report.html",
     "json": "evidently_data_drift_report.json",
-    "generated_at": "2026-01-01T11:07:06.029611"
+    "generated_at": "2026-01-05T19:41:42.290065"
   }
 }
