@@ -51,6 +51,7 @@ def create_app(config_override: dict = None) -> Flask:
     
     Args:
         config_override: Optional config overrides for testing
+            - Set 'SKIP_THRESHOLD_VALIDATION': True to skip threshold check (for tests)
         
     Returns:
         Configured Flask application
@@ -68,8 +69,19 @@ def create_app(config_override: dict = None) -> Flask:
             app.config[key] = value
     
     # Validate threshold configuration at startup (fail fast if missing)
-    threshold = _validate_threshold_configuration()
-    app.config['MODEL_THRESHOLD'] = threshold
+    # Skip validation in test environments or when explicitly disabled
+    skip_validation = (
+        os.environ.get('SKIP_THRESHOLD_VALIDATION', 'false').lower() == 'true' or
+        os.environ.get('TESTING', 'false').lower() == 'true' or
+        (config_override and config_override.get('SKIP_THRESHOLD_VALIDATION', False))
+    )
+    
+    if skip_validation:
+        logger.warning("⚠️ Threshold validation skipped (test mode)")
+        app.config['MODEL_THRESHOLD'] = None
+    else:
+        threshold = _validate_threshold_configuration()
+        app.config['MODEL_THRESHOLD'] = threshold
     
     # Enable CORS
     CORS(app)
@@ -109,8 +121,12 @@ def create_app(config_override: dict = None) -> Flask:
     return app
 
 
-# Create app instance for WSGI
-app = create_app()
+# Create app instance for WSGI (skip validation if TESTING env is set)
+# This allows tests to import this module without failing
+if os.environ.get('TESTING', 'false').lower() != 'true':
+    app = create_app()
+else:
+    app = None  # Tests will create their own app instance
 
 
 if __name__ == '__main__':

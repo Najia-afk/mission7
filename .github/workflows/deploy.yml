@@ -40,6 +40,7 @@ jobs:
           MLFLOW_TRACKING_URI: "sqlite:///mlruns.db"
           DB_PATH: "./dataset/home_credit.db"
           USE_POSTGRES: "false"
+          TESTING: "true"
           PYTHONPATH: ${{ github.workspace }}
 
   deploy:
