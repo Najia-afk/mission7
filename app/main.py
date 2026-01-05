@@ -17,6 +17,34 @@ from app.utils.logging_config import setup_logging
 logger = setup_logging('app')
 
 
+def _validate_threshold_configuration() -> float:
+    """
+    Validate threshold is properly configured at startup.
+    Fails fast with clear error if threshold is missing.
+    
+    Returns:
+        The configured threshold value
+    """
+    from app.api.services.model_service import ModelService
+    
+    try:
+        service = ModelService()
+        threshold = service._get_threshold()
+        logger.info(f"✅ Threshold configuration validated: {threshold}")
+        return threshold
+    except Exception as e:
+        logger.error(f"❌ STARTUP ERROR: Threshold not configured: {e}")
+        raise SystemExit(
+            f"\n{'='*60}\n"
+            f"CRITICAL STARTUP ERROR: Threshold Not Configured\n"
+            f"{'='*60}\n"
+            f"{e}\n\n"
+            f"Please ensure prod_models/metadata.json or prod_models/threshold.json\n"
+            f"contains the 'optimal_threshold' field before starting the application.\n"
+            f"{'='*60}\n"
+        )
+
+
 def create_app(config_override: dict = None) -> Flask:
     """
     Application factory for Flask app.
@@ -38,6 +66,10 @@ def create_app(config_override: dict = None) -> Flask:
     if config_override:
         for key, value in config_override.items():
             app.config[key] = value
+    
+    # Validate threshold configuration at startup (fail fast if missing)
+    threshold = _validate_threshold_configuration()
+    app.config['MODEL_THRESHOLD'] = threshold
     
     # Enable CORS
     CORS(app)

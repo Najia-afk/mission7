@@ -108,16 +108,34 @@ class ModelService:
             return {"error": str(e)}
     
     def _get_threshold(self) -> float:
-        """Get threshold from cache or file."""
+        """Get threshold from cache or config files. Raises error if not configured."""
         if ModelService._threshold_cache is not None:
             return ModelService._threshold_cache
         
+        # Try threshold.json first
         if os.path.exists(self.config.PROD_THRESHOLD_PATH):
             with open(self.config.PROD_THRESHOLD_PATH, 'r') as f:
                 threshold_data = json.load(f)
-                return float(threshold_data.get("optimal_threshold", self.config.DEFAULT_THRESHOLD))
+                if "optimal_threshold" in threshold_data:
+                    threshold = float(threshold_data["optimal_threshold"])
+                    logger.info(f"Threshold loaded from threshold.json: {threshold}")
+                    return threshold
         
-        return self.config.DEFAULT_THRESHOLD
+        # Try metadata.json as fallback source
+        if os.path.exists(self.config.PROD_METADATA_PATH):
+            with open(self.config.PROD_METADATA_PATH, 'r') as f:
+                metadata = json.load(f)
+                if "optimal_threshold" in metadata:
+                    threshold = float(metadata["optimal_threshold"])
+                    logger.info(f"Threshold loaded from metadata.json: {threshold}")
+                    return threshold
+        
+        # NO FALLBACK - fail clearly
+        raise ValueError(
+            "CRITICAL: Threshold not configured! "
+            "Ensure prod_models/threshold.json or prod_models/metadata.json exists "
+            "with 'optimal_threshold' field. Application cannot run without threshold configuration."
+        )
 
     def get_current_model_id(self) -> Optional[str]:
         """
@@ -228,33 +246,24 @@ class ModelService:
         return cls._model_cache is not None
     
     def _load_from_file(self) -> Tuple[Any, float]:
-        """Load model from prod_models/ directory."""
-        default_threshold = self.config.DEFAULT_THRESHOLD
-        
+        """Load model from prod_models/ directory. Raises error if threshold not configured."""
         try:
             if os.path.exists(self.config.PROD_MODEL_PATH):
                 with open(self.config.PROD_MODEL_PATH, 'rb') as f:
                     model = pickle.load(f)
                 logger.info(f"✅ Model loaded from {self.config.PROD_MODEL_PATH}")
             else:
-                logger.warning(f"⚠️ Model file not found at {self.config.PROD_MODEL_PATH}")
-                return None, default_threshold
+                raise FileNotFoundError(f"Model file not found at {self.config.PROD_MODEL_PATH}")
             
-            # Load threshold
-            if os.path.exists(self.config.PROD_THRESHOLD_PATH):
-                with open(self.config.PROD_THRESHOLD_PATH, 'r') as f:
-                    threshold_data = json.load(f)
-                    threshold = float(threshold_data.get("optimal_threshold", default_threshold))
-                logger.info(f"✅ Threshold loaded: {threshold}")
-            else:
-                threshold = default_threshold
-                logger.warning(f"⚠️ Using default threshold: {threshold}")
+            # Load threshold - will raise error if not configured
+            threshold = self._get_threshold()
+            logger.info(f"✅ Threshold loaded: {threshold}")
             
             return model, threshold
         
         except Exception as e:
             logger.error(f"❌ Error loading model from file: {e}")
-            return None, default_threshold
+            raise
     
     def _load_from_mlflow(self) -> Tuple[Any, float]:
         """Load model from MLflow registry using alias (MLflow 2.9+ compatible)."""
@@ -268,15 +277,21 @@ class ModelService:
                 version_info = self.client.get_model_version_by_alias(self.config.MODEL_NAME, "champion")
                 run_id = version_info.run_id
                 run = self.client.get_run(run_id)
-                threshold = float(run.data.params.get("business_optimal_threshold", self.config.DEFAULT_THRESHOLD))
-            except Exception:
-                threshold = self.config.DEFAULT_THRESHOLD
+                if "business_optimal_threshold" in run.data.params:
+                    threshold = float(run.data.params["business_optimal_threshold"])
+                    logger.info(f"Threshold loaded from MLflow run params: {threshold}")
+                else:
+                    # Fallback to file-based threshold
+                    threshold = self._get_threshold()
+            except Exception as mlflow_err:
+                logger.warning(f"Could not get threshold from MLflow: {mlflow_err}, using file-based threshold")
+                threshold = self._get_threshold()
             
             logger.info(f"✅ Model loaded from MLflow: {model_uri}")
             return model, threshold
         except Exception as e:
             logger.error(f"Error loading from MLflow: {e}")
-            return None, self.config.DEFAULT_THRESHOLD
+            raise
     
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the current production model."""

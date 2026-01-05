@@ -44,7 +44,9 @@ class Config:
     PROD_FEATURES_PATH: str = os.getenv("PROD_FEATURES_PATH", "/app/prod_models/feature_names.txt")
     
     # Business Rules
-    DEFAULT_THRESHOLD: float = float(os.getenv("DEFAULT_THRESHOLD", "0.45"))
+    # NOTE: DEFAULT_THRESHOLD is None - threshold MUST come from metadata.json/threshold.json
+    # This ensures no hardcoded fallback can silently use wrong values
+    DEFAULT_THRESHOLD: Optional[float] = None
     FN_FP_COST_RATIO: int = int(os.getenv("FN_FP_COST_RATIO", "10"))
     
     # API Settings

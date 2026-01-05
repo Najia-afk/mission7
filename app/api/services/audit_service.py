@@ -39,8 +39,13 @@ class AuditService:
         metadata = self._load_metadata()
         metrics = metadata.get('metrics', {})
         
-        # Extract values with fallbacks only if metadata is missing
-        threshold = metadata.get('optimal_threshold', self.config.DEFAULT_THRESHOLD)
+        # Get threshold - MUST be in metadata, no fallback
+        if 'optimal_threshold' not in metadata:
+            raise ValueError(
+                "CRITICAL: 'optimal_threshold' not found in metadata.json. "
+                "Model governance audit requires properly configured threshold."
+            )
+        threshold = metadata['optimal_threshold']
         
         return {
             "audit_timestamp": datetime.now().isoformat(),
@@ -91,7 +96,14 @@ class AuditService:
         """
         metadata = self._load_metadata()
         metrics = metadata.get('metrics', {})
-        threshold = metadata.get('optimal_threshold', self.config.DEFAULT_THRESHOLD)
+        
+        # Get threshold - MUST be in metadata, no fallback
+        if 'optimal_threshold' not in metadata:
+            raise ValueError(
+                "CRITICAL: 'optimal_threshold' not found in metadata.json. "
+                "Model card generation requires properly configured threshold."
+            )
+        threshold = metadata['optimal_threshold']
 
         return {
             "model_details": {
