@@ -339,7 +339,7 @@
 
             try {
                 // 1. Get prediction
-                const predResponse = await fetch('/predict', {
+                const predResponse = await fetch('/api/predict', {
                     method: 'POST',
                     body: formData
                 });

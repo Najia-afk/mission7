@@ -29,8 +29,8 @@ def index():
     return render_template('index.html')
 
 
-@api_bp.route('/predict')
-@api_bp.route('/api/html')
+@api_bp.route('/predict', methods=['GET'])
+@api_bp.route('/api/html', methods=['GET'])
 def predict_page():
     """Render client prediction page (database lookup)."""
     return render_template('predict.html')
@@ -292,7 +292,7 @@ def get_available_features():
 # PREDICTIONS
 # =============================================================================
 
-@api_bp.route('/predict', methods=['POST'])
+@api_bp.route('/api/predict', methods=['POST'])
 def predict():
     """
     Make a credit risk prediction

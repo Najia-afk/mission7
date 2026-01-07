@@ -60,7 +60,7 @@ def test_models_list(client):
 
 def test_predict_missing_client_id(client):
     """Test prediction with missing client_id returns error."""
-    response = client.post('/predict', data={})
+    response = client.post('/api/predict', data={})
     assert response.status_code == 400
     data = json.loads(response.data)
     assert 'error' in data
@@ -80,7 +80,7 @@ def test_predict_with_manual_features(client):
         "EXT_SOURCE_3": 0.5
     }
     
-    response = client.post('/predict', 
+    response = client.post('/api/predict', 
                           json={"client_id": "manual", "features": features},
                           content_type='application/json')
     
