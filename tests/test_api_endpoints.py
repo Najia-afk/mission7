@@ -187,7 +187,7 @@ def test_swagger_docs(client):
 
 def test_predict_with_client_id(client):
     """Test prediction with valid client_id from database."""
-    response = client.post('/predict', 
+    response = client.post('/api/predict', 
                           json={"client_id": 100002},
                           content_type='application/json')
     
@@ -252,7 +252,7 @@ def test_new_user_with_manual_features(client):
         "EXT_SOURCE_3": 0.65
     }
     
-    response = client.post('/predict', 
+    response = client.post('/api/predict', 
                           json={"client_id": new_user_id, "features": features},
                           content_type='application/json')
     
