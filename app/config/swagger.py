@@ -9,7 +9,12 @@ SWAGGER_CONFIG = {
         {
             "endpoint": 'apispec',
             "route": '/api/apispec.json',
-            "rule_filter": lambda rule: True,
+            "rule_filter": lambda rule: (
+                # Include all routes except HTML pages
+                not any(rule.rule.startswith(prefix) for prefix in ['/static', '/flasgger_static']) and
+                # Include the /predict endpoint and all /api/ endpoints
+                (rule.rule.startswith('/api') or rule.rule == '/predict')
+            ),
             "model_filter": lambda tag: True,
         }
     ],
